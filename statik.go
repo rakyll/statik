@@ -27,7 +27,12 @@ func main() {
 		return
 	}
 
-	os.Rename(file.Name(), *flagDest+"/data.go")
+	err = os.Rename(file.Name(), *flagDest+"/statikdata.go")
+	if err != nil {
+		fmt.Println(err)
+		// TODO: err signal
+		return
+	}
 }
 
 func createSourceFile(srcPath string) (file *os.File, err error) {
