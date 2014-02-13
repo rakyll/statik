@@ -41,7 +41,11 @@ func createSourceFile(srcPath string) (file *os.File, err error) {
 	var buffer bytes.Buffer
 	var zipdest io.Writer = &buffer
 
-	f, _ := ioutil.TempFile("", "statik-archive")
+	f, err := ioutil.TempFile("", "statik-archive")
+	if err != nil {
+		return
+	}
+
 	zipdest = io.MultiWriter(zipdest, f)
 	defer f.Close()
 	var modTime time.Time
