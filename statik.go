@@ -22,16 +22,18 @@ func main() {
 	flag.Parse()
 	file, err := createSourceFile(*flagSrc)
 	if err != nil {
-		fmt.Println(err)
-		// TODO: err signal
-		return
+		exitWithError(err)
 	}
 
-	err = os.Rename(file.Name(), *flagDest+"/statikdata.go")
+	destDir := *flagDest + "/statik"
+	err = os.MkdirAll(destDir, 0755)
 	if err != nil {
-		fmt.Println(err)
-		// TODO: err signal
-		return
+		exitWithError(err)
+	}
+
+	err = os.Rename(file.Name(), destDir+"/data.go")
+	if err != nil {
+		exitWithError(err)
 	}
 }
 
@@ -80,7 +82,7 @@ func createSourceFile(srcPath string) (file *os.File, err error) {
 
 	// then embed it as a quoted string
 	var qb bytes.Buffer
-	fmt.Fprint(&qb, "package main\n\n")
+	fmt.Fprint(&qb, "package statik\n\n")
 	fmt.Fprint(&qb, "import \"time\"\n\n")
 	fmt.Fprint(&qb, "var (\n")
 	fmt.Fprint(&qb, "\tStatikDataModTime time.Time\n")
@@ -116,4 +118,9 @@ func quote(dest *bytes.Buffer, bs []byte) {
 		fmt.Fprintf(dest, "\\x%02x", b)
 	}
 	dest.WriteByte('"')
+}
+
+func exitWithError(err error) {
+	fmt.Println(err)
+	os.Exit(1)
 }
