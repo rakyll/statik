@@ -99,7 +99,7 @@ func createSourceFile(srcPath string) (file *os.File, err error) {
 	quote(&qb, buffer.Bytes())
 	fmt.Fprint(&qb, "\n\tfs.Register(modTime, data)")
 	fmt.Fprint(&qb, "\n}\n")
-	err = ioutil.WriteFile(f.Name(), qb.Bytes(), 0x700)
+	err = ioutil.WriteFile(f.Name(), qb.Bytes(), 0644)
 	if err != nil {
 		return
 	}
