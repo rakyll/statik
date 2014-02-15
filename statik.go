@@ -15,7 +15,7 @@ import (
 
 var (
 	flagSrc  = flag.String("src", ".", "The path of the source directory.")
-	flagDest = flag.String("dest", ".", "The destination path of the generated source file.")
+	flagDest = flag.String("dest", ".", "The destination path of the generated package.")
 )
 
 func main() {
@@ -87,15 +87,17 @@ func createSourceFile(srcPath string) (file *os.File, err error) {
 	// then embed it as a quoted string
 	var qb bytes.Buffer
 	fmt.Fprint(&qb, "package statik\n\n")
-	fmt.Fprint(&qb, "import \"time\"\n\n")
-	fmt.Fprint(&qb, "var (\n")
-	fmt.Fprint(&qb, "\tStatikDataModTime time.Time\n")
-	fmt.Fprint(&qb, "\tStatikData        string\n")
+
+	fmt.Fprint(&qb, "import (\n")
+	fmt.Fprint(&qb, "\t\"time\"\n\n")
+	fmt.Fprint(&qb, "\t\"github.com/rakyll/statik/fs\"\n")
 	fmt.Fprint(&qb, ")\n\n")
+
 	fmt.Fprint(&qb, "func init() {\n")
-	fmt.Fprintf(&qb, "\tStatikDataModTime = time.Unix(%d, 0)\n", modTime.Unix())
-	fmt.Fprint(&qb, "\tStatikData = ")
+	fmt.Fprintf(&qb, "\tmodTime := time.Unix(%d, 0)\n", modTime.Unix())
+	fmt.Fprint(&qb, "\tdata := ")
 	quote(&qb, buffer.Bytes())
+	fmt.Fprint(&qb, "\n\tfs.Register(modTime, data)")
 	fmt.Fprint(&qb, "\n}\n")
 	err = ioutil.WriteFile(f.Name(), qb.Bytes(), 0x700)
 	if err != nil {
