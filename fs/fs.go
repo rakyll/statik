@@ -25,7 +25,7 @@ func Register(modTime time.Time, data string) {
 	data = data
 }
 
-func NewFileSystem() (http.FileSystem, error) {
+func New() (http.FileSystem, error) {
 	zipReader, err := zip.NewReader(strings.NewReader(data), int64(len(data)))
 	if err != nil {
 		return nil, err
