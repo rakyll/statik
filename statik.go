@@ -87,12 +87,12 @@ func createSourceFile(srcPath string) (file *os.File, err error) {
 	// then embed it as a quoted string
 	var qb bytes.Buffer
 	fmt.Fprint(&qb, "package statik\n\n")
-
+	// imports
 	fmt.Fprint(&qb, "import (\n")
 	fmt.Fprint(&qb, "\t\"time\"\n\n")
 	fmt.Fprint(&qb, "\t\"github.com/rakyll/statik/fs\"\n")
 	fmt.Fprint(&qb, ")\n\n")
-
+	// func init
 	fmt.Fprint(&qb, "func init() {\n")
 	fmt.Fprintf(&qb, "\tmodTime := time.Unix(%d, 0)\n", modTime.Unix())
 	fmt.Fprint(&qb, "\tdata := ")
