@@ -33,10 +33,13 @@ func init() {
 }
 ~~~
 
-In your program, all your need to do is to initialize a new statik file system and serve.
+In your program, all your need to do is to import the generated package, initialize a new statik file system and serve.
 
 ~~~ go
-import "github.com/rakyll/statik/fs"
+import (
+  _ "./statik"
+  "github.com/rakyll/statik/fs"
+)
 
 // ...
 
