@@ -27,7 +27,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 const (
@@ -68,7 +67,6 @@ func generateSource(srcPath string) (file *os.File, err error) {
 	var (
 		buffer    bytes.Buffer
 		zipWriter io.Writer
-		modTime   time.Time
 	)
 
 	zipWriter = &buffer
@@ -92,9 +90,6 @@ func generateSource(srcPath string) (file *os.File, err error) {
 		relPath, err := filepath.Rel(srcPath, path)
 		if err != nil {
 			return err
-		}
-		if mt := fi.ModTime(); mt.After(modTime) {
-			modTime = mt
 		}
 		b, err := ioutil.ReadFile(path)
 		if err != nil {
