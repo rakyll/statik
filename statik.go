@@ -40,20 +40,20 @@ func main() {
 
 func createSourceFile(srcPath string) (file *os.File, err error) {
 	var (
-		buffer  bytes.Buffer
-		zipdest io.Writer
+		buffer    bytes.Buffer
+		zipWriter io.Writer
 	)
-	zipdest = &buffer
+	zipWriter = &buffer
 	f, err := ioutil.TempFile("", "statik-archive")
 	if err != nil {
 		return
 	}
 
-	zipdest = io.MultiWriter(zipdest, f)
+	zipWriter = io.MultiWriter(zipWriter, f)
 	defer f.Close()
 	var modTime time.Time
 
-	w := zip.NewWriter(zipdest)
+	w := zip.NewWriter(zipWriter)
 	if err = filepath.Walk(srcPath, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
