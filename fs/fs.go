@@ -116,7 +116,7 @@ func (f *file) Seek(offset int64, whence int) (ret int64, err error) {
 	return f.reader.Seek(offset, whence)
 }
 
-// Returns FileInfo.
+// Stats the file.
 func (f *file) Stat() (os.FileInfo, error) {
 	return f, nil
 }
