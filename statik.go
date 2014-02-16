@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -31,7 +32,7 @@ func main() {
 		exitWithError(err)
 	}
 
-	err = os.Rename(file.Name(), destDir+"/data.go")
+	err = os.Rename(file.Name(), path.Join(destDir, "data.go"))
 	if err != nil {
 		exitWithError(err)
 	}
