@@ -13,20 +13,23 @@ import (
 	"time"
 )
 
-var data string
-var modTime time.Time
+var zipData string
+var zipModTime time.Time
 
 type statikFS struct {
 	files map[string]*zip.File
 }
 
 func Register(modTime time.Time, data string) {
-	modTime = modTime
-	data = data
+	zipModTime = modTime
+	zipData = data
 }
 
 func New() (http.FileSystem, error) {
-	zipReader, err := zip.NewReader(strings.NewReader(data), int64(len(data)))
+	if zipData == "" {
+		return nil, os.ErrNotExist
+	}
+	zipReader, err := zip.NewReader(strings.NewReader(zipData), int64(len(zipData)))
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +105,7 @@ func (f *fileInfo) Size() int64 {
 }
 
 func (f *fileInfo) ModTime() time.Time {
-	return modTime
+	return zipModTime
 }
 
 func (f *fileInfo) Name() string {
