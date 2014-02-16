@@ -35,6 +35,8 @@ func New() (http.FileSystem, error) {
 	}
 	files := make(map[string]*zip.File)
 	for _, file := range zipReader.File {
+		// name should represent a path to the file
+		file.Name = "/" + file.Name
 		files[file.Name] = file
 	}
 	return &statikFS{files: files}, nil
