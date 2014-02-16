@@ -116,17 +116,21 @@ func createSourceFile(srcPath string) (file *os.File, err error) {
 func quote(dest *bytes.Buffer, bs []byte) {
 	dest.WriteByte('"')
 	for _, b := range bs {
-		switch b {
-		case '\n':
+		if b == '\n' {
 			dest.WriteString(`\n`)
-		case '\\':
+			continue
+		}
+		if b == '\\' {
 			dest.WriteString(`\\`)
-		case '"':
+			continue
+		}
+		if b == '"' {
 			dest.WriteString(`\"`)
-		default:
-			if (b >= 32 && b <= 126) || b == '\t' {
-				dest.WriteByte(b)
-			}
+			continue
+		}
+		if (b >= 32 && b <= 126) || b == '\t' {
+			dest.WriteByte(b)
+			continue
 		}
 		fmt.Fprintf(dest, "\\x%02x", b)
 	}
