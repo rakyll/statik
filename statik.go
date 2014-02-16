@@ -38,9 +38,11 @@ func main() {
 }
 
 func createSourceFile(srcPath string) (file *os.File, err error) {
-	var buffer bytes.Buffer
-	var zipdest io.Writer = &buffer
-
+	var (
+		buffer  bytes.Buffer
+		zipdest io.Writer
+	)
+	zipdest = &buffer
 	f, err := ioutil.TempFile("", "statik-archive")
 	if err != nil {
 		return
@@ -79,8 +81,7 @@ func createSourceFile(srcPath string) (file *os.File, err error) {
 	}); err != nil {
 		return
 	}
-	err = w.Close()
-	if err != nil {
+	if err = w.Close(); err != nil {
 		return
 	}
 
@@ -99,11 +100,16 @@ func createSourceFile(srcPath string) (file *os.File, err error) {
 	quote(&qb, buffer.Bytes())
 	fmt.Fprint(&qb, "\n\tfs.Register(modTime, data)")
 	fmt.Fprint(&qb, "\n}\n")
-	err = ioutil.WriteFile(f.Name(), qb.Bytes(), 0644)
+
+	// Create a temp file to output the generated code
+	sourceFile, err := ioutil.TempFile("", "statik-gencode")
 	if err != nil {
 		return
 	}
-	return f, nil
+	if err = ioutil.WriteFile(sourceFile.Name(), qb.Bytes(), 0644); err != nil {
+		return
+	}
+	return sourceFile, nil
 }
 
 func quote(dest *bytes.Buffer, bs []byte) {
