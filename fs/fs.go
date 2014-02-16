@@ -3,6 +3,7 @@ package fs
 import (
 	"archive/zip"
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -27,7 +28,7 @@ func Register(modTime time.Time, data string) {
 
 func New() (http.FileSystem, error) {
 	if zipData == "" {
-		return nil, os.ErrNotExist
+		return nil, errors.New("statik/fs: No zip data registered.")
 	}
 	zipReader, err := zip.NewReader(strings.NewReader(zipData), int64(len(zipData)))
 	if err != nil {
@@ -53,22 +54,22 @@ func (fs *statikFS) Open(name string) (http.File, error) {
 
 type file struct {
 	*fileInfo
-	once sync.Once // for making the SectionReader
-	sr   *io.SectionReader
+	once   sync.Once // for making the SectionReader
+	reader *io.SectionReader
 }
 
 func (f *file) Read(p []byte) (n int, err error) {
-	f.once.Do(f.initReader)
-	return f.sr.Read(p)
+	f.once.Do(f.newReader)
+	return f.reader.Read(p)
 }
 
 func (f *file) Seek(offset int64, whence int) (ret int64, err error) {
-	f.once.Do(f.initReader)
-	return f.sr.Seek(offset, whence)
+	f.once.Do(f.newReader)
+	return f.reader.Seek(offset, whence)
 }
 
-func (f *file) initReader() {
-	f.sr = io.NewSectionReader(f.fileInfo.ra, 0, f.Size())
+func (f *file) newReader() {
+	f.reader = io.NewSectionReader(f.fileInfo.ra, 0, f.Size())
 }
 
 func newFileInfo(zf *zip.File) (*fileInfo, error) {
@@ -82,19 +83,19 @@ func newFileInfo(zf *zip.File) (*fileInfo, error) {
 	}
 	rc.Close()
 	return &fileInfo{
-		fullName: zf.Name,
-		regdata:  all,
-		Closer:   nopCloser,
-		ra:       bytes.NewReader(all),
+		relPath: zf.Name,
+		regdata: all,
+		Closer:  nopCloser,
+		ra:      bytes.NewReader(all),
 	}, nil
 }
 
 var nopCloser = ioutil.NopCloser(nil)
 
 type fileInfo struct {
-	fullName string
-	regdata  []byte      // non-nil if regular file
-	ra       io.ReaderAt // over regdata
+	relPath string
+	regdata []byte      // non-nil if regular file
+	ra      io.ReaderAt // over regdata
 	io.Closer
 }
 
@@ -111,7 +112,7 @@ func (f *fileInfo) ModTime() time.Time {
 }
 
 func (f *fileInfo) Name() string {
-	return path.Base(f.fullName)
+	return path.Base(f.relPath)
 }
 
 func (f *fileInfo) Stat() (os.FileInfo, error) {

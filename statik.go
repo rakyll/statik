@@ -26,7 +26,7 @@ var (
 
 func main() {
 	flag.Parse()
-	file, err := createSourceFile(*flagSrc)
+	file, err := generateSource(*flagSrc)
 	if err != nil {
 		exitWithError(err)
 	}
@@ -43,11 +43,17 @@ func main() {
 	}
 }
 
-func createSourceFile(srcPath string) (file *os.File, err error) {
+// Walks on the source path and generates source code
+// that contains source directory's contents as zip contents.
+// Generates source registers generated zip contents data to
+// be read by the statik/fs HTTP file system.
+func generateSource(srcPath string) (file *os.File, err error) {
 	var (
 		buffer    bytes.Buffer
 		zipWriter io.Writer
+		modTime   time.Time
 	)
+
 	zipWriter = &buffer
 	f, err := ioutil.TempFile("", namePackage)
 	if err != nil {
@@ -56,18 +62,17 @@ func createSourceFile(srcPath string) (file *os.File, err error) {
 
 	zipWriter = io.MultiWriter(zipWriter, f)
 	defer f.Close()
-	var modTime time.Time
 
 	w := zip.NewWriter(zipWriter)
 	if err = filepath.Walk(srcPath, func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		// Ignore empty directories and hidden files.
+		// Ignore directories and hidden files.
+		// No entry is needed for directories in a zip file.
+		// Each file is represented with a path, no directory
+		// entities are required to build the hierarchy.
 		if fi.IsDir() || strings.HasPrefix(fi.Name(), ".") {
 			return nil
 		}
-		suffix, err := filepath.Rel(srcPath, path)
+		relPath, err := filepath.Rel(srcPath, path)
 		if err != nil {
 			return err
 		}
@@ -78,7 +83,7 @@ func createSourceFile(srcPath string) (file *os.File, err error) {
 		if err != nil {
 			return err
 		}
-		f, err := w.Create(filepath.ToSlash(suffix))
+		f, err := w.Create(filepath.ToSlash(relPath))
 		if err != nil {
 			return err
 		}
@@ -93,19 +98,22 @@ func createSourceFile(srcPath string) (file *os.File, err error) {
 
 	// then embed it as a quoted string
 	var qb bytes.Buffer
-	fmt.Fprintf(&qb, "package %s\n\n", namePackage)
-	// imports
-	fmt.Fprint(&qb, "import (\n")
-	fmt.Fprint(&qb, "\t\"time\"\n\n")
-	fmt.Fprint(&qb, "\t\"github.com/rakyll/statik/fs\"\n")
-	fmt.Fprint(&qb, ")\n\n")
-	// func init
-	fmt.Fprint(&qb, "func init() {\n")
-	fmt.Fprintf(&qb, "\tmodTime := time.Unix(%d, 0)\n", modTime.Unix())
-	fmt.Fprint(&qb, "\tdata := ")
-	quote(&qb, buffer.Bytes())
-	fmt.Fprint(&qb, "\n\tfs.Register(modTime, data)")
-	fmt.Fprint(&qb, "\n}\n")
+	fmt.Fprintf(&qb, `package %s
+
+import (
+		"time"
+
+		"github.com/rakyll/statik/fs"
+)
+
+func init() {
+	modTime := time.Unix(%d, 0)
+	data := "`, namePackage, modTime.Unix())
+	FprintZipData(&qb, buffer.Bytes())
+	fmt.Fprint(&qb, `"
+	fs.Register(modTime, data)
+}
+`)
 
 	// Create a temp file to output the generated code
 	sourceFile, err := ioutil.TempFile("", nameSourceFile)
@@ -118,9 +126,9 @@ func createSourceFile(srcPath string) (file *os.File, err error) {
 	return sourceFile, nil
 }
 
-func quote(dest *bytes.Buffer, bs []byte) {
-	dest.WriteByte('"')
-	for _, b := range bs {
+// Converts zip binary contents to a string literal.
+func FprintZipData(dest *bytes.Buffer, zipData []byte) {
+	for _, b := range zipData {
 		if b == '\n' {
 			dest.WriteString(`\n`)
 			continue
@@ -139,9 +147,9 @@ func quote(dest *bytes.Buffer, bs []byte) {
 		}
 		fmt.Fprintf(dest, "\\x%02x", b)
 	}
-	dest.WriteByte('"')
 }
 
+// Prints out the error message and exists with a non-success signal.
 func exitWithError(err error) {
 	fmt.Println(err)
 	os.Exit(1)
