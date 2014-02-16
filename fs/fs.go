@@ -8,21 +8,17 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path"
 	"strings"
 	"sync"
-	"time"
 )
 
 var zipData string
-var zipModTime time.Time
 
 type statikFS struct {
 	files map[string]*zip.File
 }
 
-func Register(modTime time.Time, data string) {
-	zipModTime = modTime
+func Register(data string) {
 	zipData = data
 }
 
@@ -48,14 +44,43 @@ func (fs *statikFS) Open(name string) (http.File, error) {
 	if !ok {
 		return nil, os.ErrNotExist
 	}
-	fi, _ := newFileInfo(f)
-	return &file{fileInfo: fi}, nil
+	return newFile(f)
+}
+
+var nopCloser = ioutil.NopCloser(nil)
+
+func newFile(zf *zip.File) (*file, error) {
+	rc, err := zf.Open()
+	if err != nil {
+		return nil, err
+	}
+	all, err := ioutil.ReadAll(rc)
+	if err != nil {
+		return nil, err
+	}
+	rc.Close()
+
+	return &file{
+		FileInfo: zf.FileInfo(),
+		data:     all,
+		readerAt: bytes.NewReader(all),
+		Closer:   nopCloser,
+	}, nil
 }
 
 type file struct {
-	*fileInfo
-	once   sync.Once // for making the SectionReader
-	reader *io.SectionReader
+	os.FileInfo
+	io.Closer
+
+	data     []byte // non-nil if regular file
+	reader   *io.SectionReader
+	readerAt io.ReaderAt // over data
+
+	once sync.Once
+}
+
+func (f *file) newReader() {
+	f.reader = io.NewSectionReader(f.readerAt, 0, f.FileInfo.Size())
 }
 
 func (f *file) Read(p []byte) (n int, err error) {
@@ -68,70 +93,11 @@ func (f *file) Seek(offset int64, whence int) (ret int64, err error) {
 	return f.reader.Seek(offset, whence)
 }
 
-func (f *file) newReader() {
-	f.reader = io.NewSectionReader(f.fileInfo.ra, 0, f.Size())
-}
-
-func newFileInfo(zf *zip.File) (*fileInfo, error) {
-	rc, err := zf.Open()
-	if err != nil {
-		return nil, err
-	}
-	all, err := ioutil.ReadAll(rc)
-	if err != nil {
-		return nil, err
-	}
-	rc.Close()
-	return &fileInfo{
-		relPath: zf.Name,
-		regdata: all,
-		Closer:  nopCloser,
-		ra:      bytes.NewReader(all),
-	}, nil
-}
-
-var nopCloser = ioutil.NopCloser(nil)
-
-type fileInfo struct {
-	relPath string
-	regdata []byte      // non-nil if regular file
-	ra      io.ReaderAt // over regdata
-	io.Closer
-}
-
-func (f *fileInfo) IsDir() bool {
-	return f.regdata == nil
-}
-
-func (f *fileInfo) Size() int64 {
-	return int64(len(f.regdata))
-}
-
-func (f *fileInfo) ModTime() time.Time {
-	return zipModTime
-}
-
-func (f *fileInfo) Name() string {
-	return path.Base(f.relPath)
-}
-
-func (f *fileInfo) Stat() (os.FileInfo, error) {
+func (f *file) Stat() (os.FileInfo, error) {
 	return f, nil
 }
 
-func (f *fileInfo) Sys() interface{} {
-	return nil
-}
-
-func (f *fileInfo) Readdir(count int) ([]os.FileInfo, error) {
+func (f *file) Readdir(count int) ([]os.FileInfo, error) {
 	// directory listing is disabled.
-	var files []os.FileInfo
-	return files, nil
-}
-
-func (f *fileInfo) Mode() os.FileMode {
-	if f.IsDir() {
-		return 0755 | os.ModeDir
-	}
-	return 0644
+	return make([]os.FileInfo, 0), nil
 }

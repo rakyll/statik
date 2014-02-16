@@ -101,17 +101,14 @@ func generateSource(srcPath string) (file *os.File, err error) {
 	fmt.Fprintf(&qb, `package %s
 
 import (
-		"time"
-
 		"github.com/rakyll/statik/fs"
 )
 
 func init() {
-	modTime := time.Unix(%d, 0)
-	data := "`, namePackage, modTime.Unix())
+	data := "`, namePackage)
 	FprintZipData(&qb, buffer.Bytes())
 	fmt.Fprint(&qb, `"
-	fs.Register(modTime, data)
+	fs.Register(data)
 }
 `)
 
