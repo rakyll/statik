@@ -14,6 +14,11 @@ import (
 	"time"
 )
 
+const (
+	namePackage    = "statik"
+	nameSourceFile = "statik.go"
+)
+
 var (
 	flagSrc  = flag.String("src", ".", "The path of the source directory.")
 	flagDest = flag.String("dest", ".", "The destination path of the generated package.")
@@ -26,13 +31,13 @@ func main() {
 		exitWithError(err)
 	}
 
-	destDir := *flagDest + "/statik"
+	destDir := path.Join(*flagDest, namePackage)
 	err = os.MkdirAll(destDir, 0755)
 	if err != nil {
 		exitWithError(err)
 	}
 
-	err = os.Rename(file.Name(), path.Join(destDir, "data.go"))
+	err = os.Rename(file.Name(), path.Join(destDir, nameSourceFile))
 	if err != nil {
 		exitWithError(err)
 	}
@@ -44,7 +49,7 @@ func createSourceFile(srcPath string) (file *os.File, err error) {
 		zipWriter io.Writer
 	)
 	zipWriter = &buffer
-	f, err := ioutil.TempFile("", "statik-archive")
+	f, err := ioutil.TempFile("", namePackage)
 	if err != nil {
 		return
 	}
@@ -88,7 +93,7 @@ func createSourceFile(srcPath string) (file *os.File, err error) {
 
 	// then embed it as a quoted string
 	var qb bytes.Buffer
-	fmt.Fprint(&qb, "package statik\n\n")
+	fmt.Fprintf(&qb, "package %s\n\n", namePackage)
 	// imports
 	fmt.Fprint(&qb, "import (\n")
 	fmt.Fprint(&qb, "\t\"time\"\n\n")
@@ -103,7 +108,7 @@ func createSourceFile(srcPath string) (file *os.File, err error) {
 	fmt.Fprint(&qb, "\n}\n")
 
 	// Create a temp file to output the generated code
-	sourceFile, err := ioutil.TempFile("", "statik-gencode")
+	sourceFile, err := ioutil.TempFile("", nameSourceFile)
 	if err != nil {
 		return
 	}
