@@ -7,5 +7,5 @@ Run statik on the root of this example project to generate source code with dire
 Once the <projectPath>/statik package is generated, run the web server:
 
 	$ go run main.go
-	
-Visit [http://localhost:8080/hello.txt](http://localhost:8080/hello.txt) to see the file.
+
+Visit [http://localhost:8080/public/hello.txt](http://localhost:8080/public/hello.txt) to see the file.
