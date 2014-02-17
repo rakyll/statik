@@ -80,6 +80,9 @@ func generateSource(srcPath string) (file *os.File, err error) {
 
 	w := zip.NewWriter(zipWriter)
 	if err = filepath.Walk(srcPath, func(path string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		// Ignore directories and hidden files.
 		// No entry is needed for directories in a zip file.
 		// Each file is represented with a path, no directory
