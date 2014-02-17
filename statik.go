@@ -98,7 +98,12 @@ func generateSource(srcPath string) (file *os.File, err error) {
 		if err != nil {
 			return err
 		}
-		f, err := w.Create(filepath.ToSlash(relPath))
+		fHeader, err := zip.FileInfoHeader(fi)
+		if err != nil {
+			return err
+		}
+		fHeader.Name = relPath
+		f, err := w.CreateHeader(fHeader)
 		if err != nil {
 			return err
 		}
