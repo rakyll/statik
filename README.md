@@ -16,24 +16,7 @@ statik is a tiny program that reads a directory and generates a source file cont
 
 The command below will walk on the public path and generate a package called `statik` under the current working directory.
 
-    $ statik -src=/path/to/your/project/public
-    
-Let's take a look at the generated source file.
-
-	$ cat statik/statik.go
-
-~~~ go
-package statik
-
-import (
-  "github.com/rakyll/statik/fs"
-)
-
-func init() {
-  data := // ...
-  fs.Register(data)
-}
-~~~
+    $ statik -src=/path/to/your/project/public    
 
 In your program, all your need to do is to import the generated package, initialize a new statik file system and serve.
 
