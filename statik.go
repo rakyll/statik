@@ -35,7 +35,7 @@ const (
 )
 
 var (
-	flagSrc  = flag.String("src", ".", "The path of the source directory.")
+	flagSrc  = flag.String("src", path.Join(".", "public"), "The path of the source directory.")
 	flagDest = flag.String("dest", ".", "The destination path of the generated package.")
 )
 
