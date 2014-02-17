@@ -1,2 +1,6 @@
 language: go
 go: 1.1
+
+install:
+  - go get -v github.com/rakyll/statik
+  - statik -src=./example/public -dest=./example/
