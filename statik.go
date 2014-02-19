@@ -52,6 +52,7 @@ func main() {
 	if err != nil {
 		exitWithError(err)
 	}
+	file.Close()
 
 	err = os.Rename(file.Name(), path.Join(destDir, nameSourceFile))
 	if err != nil {
