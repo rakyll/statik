@@ -132,15 +132,10 @@ func init() {
 }
 `)
 
-	// Create a temp file to output the generated code
-	sourceFile, err := ioutil.TempFile("", nameSourceFile)
-	if err != nil {
+	if err = ioutil.WriteFile(f.Name(), qb.Bytes(), 0644); err != nil {
 		return
 	}
-	if err = ioutil.WriteFile(sourceFile.Name(), qb.Bytes(), 0644); err != nil {
-		return
-	}
-	return sourceFile, nil
+	return f, nil
 }
 
 // Converts zip binary contents to a string literal.
