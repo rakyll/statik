@@ -53,10 +53,36 @@ func main() {
 		exitWithError(err)
 	}
 
-	err = os.Rename(file.Name(), path.Join(destDir, nameSourceFile))
+	err = copyGeneratedSource(file.Name(), path.Join(destDir, nameSourceFile))
 	if err != nil {
 		exitWithError(err)
 	}
+}
+
+func copyGeneratedSource(src, target string) (err error) {
+	// Try to rename generated source ...
+	err = os.Rename(src, target)
+	if err != nil { // ... if that failed copy byte by byte.
+		srcR, err := os.Open(src)
+		if err != nil {
+			return err
+		}
+		defer srcR.Close()
+
+		if _, err = os.Stat(target); !os.IsNotExist(err) {
+			return fmt.Errorf("file %q already exists", target)
+		}
+
+		tgtW, err := os.Create(target)
+		if err != nil {
+			return err
+		}
+		defer tgtW.Close()
+
+		_, err = io.Copy(tgtW, srcR)
+		return err
+	}
+	return nil
 }
 
 // Walks on the source path and generates source code
