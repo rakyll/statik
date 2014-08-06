@@ -22,8 +22,9 @@ In your program, all your need to do is to import the generated package, initial
 
 ~~~ go
 import (
-  _ "./statik"
   "github.com/rakyll/statik/fs"
+  
+  _ "./statik" // TODO: Replace with absolute import path
 )
 
 // ...
