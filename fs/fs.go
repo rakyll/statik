@@ -59,16 +59,27 @@ func New() (http.FileSystem, error) {
 // readers. Returns os.ErrNotExists if file is not
 // found in the archive.
 func (fs *statikFS) Open(name string) (http.File, error) {
+	name = strings.Replace(name, "//", "/", -1)
 	f, ok := fs.files[name]
+
+	// The file doesn't match, but maybe it's a directory,
+	// thus we should look for index.html
 	if !ok {
-		return nil, os.ErrNotExist
+		indexName := strings.Replace(name+"/index.html", "//", "/", -1)
+		f, ok = fs.files[indexName]
+
+		if !ok {
+			return nil, os.ErrNotExist
+		}
+
+		return newFile(f, true)
 	}
-	return newFile(f)
+	return newFile(f, false)
 }
 
 var nopCloser = ioutil.NopCloser(nil)
 
-func newFile(zf *zip.File) (*file, error) {
+func newFile(zf *zip.File, isDir bool) (*file, error) {
 	rc, err := zf.Open()
 	if err != nil {
 		return nil, err
@@ -84,6 +95,7 @@ func newFile(zf *zip.File) (*file, error) {
 		data:     all,
 		readerAt: bytes.NewReader(all),
 		Closer:   nopCloser,
+		isDir:    isDir,
 	}, nil
 }
 
@@ -96,6 +108,7 @@ type file struct {
 	data     []byte // non-nil if regular file
 	reader   *io.SectionReader
 	readerAt io.ReaderAt // over data
+	isDir    bool
 
 	once sync.Once
 }
@@ -119,6 +132,11 @@ func (f *file) Seek(offset int64, whence int) (ret int64, err error) {
 // Stats the file.
 func (f *file) Stat() (os.FileInfo, error) {
 	return f, nil
+}
+
+// IsDir returns true if the file location represents a directory.
+func (f *file) IsDir() bool {
+	return f.isDir
 }
 
 // Returns an empty slice of files, directory
