@@ -37,12 +37,13 @@ const (
 var (
 	flagSrc  = flag.String("src", path.Join(".", "public"), "The path of the source directory.")
 	flagDest = flag.String("dest", ".", "The destination path of the generated package.")
+	flagPkg  = flag.String("pkg", "github.com/rakyll/static/fs", "The import path of the fs package.")
 )
 
 func main() {
 	flag.Parse()
 
-	file, err := generateSource(*flagSrc)
+	file, err := generateSource(*flagSrc, *flagPkg)
 	if err != nil {
 		exitWithError(err)
 	}
@@ -63,7 +64,7 @@ func main() {
 // that contains source directory's contents as zip contents.
 // Generates source registers generated zip contents data to
 // be read by the statik/fs HTTP file system.
-func generateSource(srcPath string) (file *os.File, err error) {
+func generateSource(srcPath, pkgPath string) (file *os.File, err error) {
 	var (
 		buffer    bytes.Buffer
 		zipWriter io.Writer
@@ -121,11 +122,11 @@ func generateSource(srcPath string) (file *os.File, err error) {
 	fmt.Fprintf(&qb, `package %s
 
 import (
-		"github.com/rakyll/statik/fs"
+		"%s"
 )
 
 func init() {
-	data := "`, namePackage)
+	data := "`, namePackage, pkgPath)
 	FprintZipData(&qb, buffer.Bytes())
 	fmt.Fprint(&qb, `"
 	fs.Register(data)
