@@ -122,7 +122,7 @@ func generateSource(srcPath, pkgPath string) (file *os.File, err error) {
 	fmt.Fprintf(&qb, `package %s
 
 import (
-		"%s"
+	"%s"
 )
 
 func init() {
