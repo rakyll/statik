@@ -24,7 +24,7 @@ In your program, all your need to do is to import the generated package, initial
 import (
   "github.com/rakyll/statik/fs"
   
-  _ "./statik" // TODO: Replace with absolute import path
+  _ "./statik" // TODO: Replace with the absolute import path
 )
 
 // ...
