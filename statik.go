@@ -53,34 +53,38 @@ func main() {
 		exitWithError(err)
 	}
 
-	err = copyGeneratedSource(file.Name(), path.Join(destDir, nameSourceFile))
+	err = copy(file.Name(), path.Join(destDir, nameSourceFile))
 	if err != nil {
 		exitWithError(err)
 	}
 }
 
-func copyGeneratedSource(src, target string) (err error) {
+func copy(src, dest string) error {
 	// Try to rename generated source ...
-	err = os.Rename(src, target)
-	if err != nil { // ... if that failed copy byte by byte.
-		srcR, err := os.Open(src)
+	if err := os.Rename(src, dest); err != nil {
+		// ... if that failed (might do so due to temporary file residing on a
+		// different device) try to copy byte by byte.
+
+		rc, err := os.Open(src)
 		if err != nil {
 			return err
 		}
-		defer srcR.Close()
+		defer rc.Close()
 
-		if _, err = os.Stat(target); !os.IsNotExist(err) {
-			return fmt.Errorf("file %q already exists", target)
+		if _, err = os.Stat(dest); !os.IsNotExist(err) {
+			return fmt.Errorf("file %q already exists", dest)
 		}
 
-		tgtW, err := os.Create(target)
+		wc, err := os.Create(dest)
 		if err != nil {
 			return err
 		}
-		defer tgtW.Close()
+		defer wc.Close()
 
-		_, err = io.Copy(tgtW, srcR)
-		return err
+		if _, err = io.Copy(wc, rc); err != nil {
+			_ = os.Remove(dest)
+			return err
+		}
 	}
 	return nil
 }
