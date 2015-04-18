@@ -53,10 +53,42 @@ func main() {
 		exitWithError(err)
 	}
 
-	err = os.Rename(file.Name(), path.Join(destDir, nameSourceFile))
+	err = copy(file.Name(), path.Join(destDir, nameSourceFile))
 	if err != nil {
 		exitWithError(err)
 	}
+}
+
+func copy(src, dest string) error {
+	// Try to rename generated source ...
+	if err := os.Rename(src, dest); err == nil {
+		return nil
+	}
+
+	// ... if the rename failed (might do so due to temporary file residing on a
+	// different device) try to copy byte by byte.
+
+	rc, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer rc.Close()
+
+	if _, err = os.Stat(dest); !os.IsNotExist(err) {
+		return fmt.Errorf("file %q already exists", dest)
+	}
+
+	wc, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer wc.Close()
+
+	if _, err = io.Copy(wc, rc); err != nil {
+		// Delete remains of failed copy attempt.
+		_ = os.Remove(dest)
+	}
+	return err
 }
 
 // Walks on the source path and generates source code
