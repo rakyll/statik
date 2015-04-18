@@ -57,6 +57,25 @@ func main() {
 	if err != nil {
 		exitWithError(err)
 	}
+	err = os.Remove(file.Name())
+	if err != nil {
+		exitWithError(err)
+	}
+}
+
+// copy the content of a file to a new location
+func copy(src string, dst string) error {
+	// Read all content of src to data
+	data, err := ioutil.ReadFile(src)
+	if err != nil {
+		return err
+	}
+	// Write data to dst
+	err = ioutil.WriteFile(dst, data, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func copy(src, dest string) error {
