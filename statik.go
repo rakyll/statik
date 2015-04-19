@@ -137,7 +137,7 @@ func generateSource(srcPath string) (file *os.File, err error) {
 		if err != nil {
 			return err
 		}
-		fHeader.Name = relPath
+		fHeader.Name = filepath.ToSlash(relPath)
 		f, err := w.CreateHeader(fHeader)
 		if err != nil {
 			return err
