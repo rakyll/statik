@@ -53,13 +53,15 @@ func main() {
 		exitWithError(err)
 	}
 
-	err = copy(file.Name(), path.Join(destDir, nameSourceFile))
+	err = rename(file.Name(), path.Join(destDir, nameSourceFile))
 	if err != nil {
 		exitWithError(err)
 	}
 }
 
-func copy(src, dest string) error {
+// rename tries to os.Rename, but fall backs to copying from src
+// to dest and unlink the source if os.Rename fails.
+func rename(src, dest string) error {
 	// Try to rename generated source.
 	if err := os.Rename(src, dest); err == nil {
 		return nil
