@@ -60,19 +60,20 @@ func main() {
 }
 
 func copy(src, dest string) error {
-	// Try to rename generated source ...
+	// Try to rename generated source.
 	if err := os.Rename(src, dest); err == nil {
 		return nil
 	}
-
-	// ... if the rename failed (might do so due to temporary file residing on a
-	// different device) try to copy byte by byte.
-
+	// If the rename failed (might do so due to temporary file residing on a
+	// different device), try to copy byte by byte.
 	rc, err := os.Open(src)
 	if err != nil {
 		return err
 	}
-	defer rc.Close()
+	defer func() {
+		rc.Close()
+		os.Remove(src) // ignore the error, source is in tmp.
+	}()
 
 	if _, err = os.Stat(dest); !os.IsNotExist(err) {
 		return fmt.Errorf("file %q already exists", dest)
@@ -86,7 +87,7 @@ func copy(src, dest string) error {
 
 	if _, err = io.Copy(wc, rc); err != nil {
 		// Delete remains of failed copy attempt.
-		_ = os.Remove(dest)
+		os.Remove(dest)
 	}
 	return err
 }
