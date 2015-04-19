@@ -84,12 +84,11 @@ func newFile(zf *zip.File, isDir bool) (*file, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rc.Close()
 	all, err := ioutil.ReadAll(rc)
 	if err != nil {
 		return nil, err
 	}
-	rc.Close()
-
 	return &file{
 		FileInfo: zf.FileInfo(),
 		data:     all,
