@@ -1,3 +1,5 @@
+//go:generate statik -src=./public
+
 package main
 
 import (
@@ -8,8 +10,7 @@ import (
 	"github.com/rakyll/statik/fs"
 )
 
-// Before buildling, run `statik -src=./public`
-// to generate the statik package.
+// Before buildling, run go generate.
 // Then, run the main program and visit http://localhost:8080/public/hello.txt
 func main() {
 	statikFS, err := fs.New()

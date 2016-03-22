@@ -1,10 +1,10 @@
 # How to run?
 
-Run statik on the root of this example project to generate source code with directory contents.
+Run `go generate` to create a statik package that embeds the binary data underneath the public directory.
 
-	$ statik
+	$ go generate
 
-Once the <projectPath>/statik package is generated, run the web server:
+Once the statik package is generated, run the web server:
 
 	$ go run main.go
 
