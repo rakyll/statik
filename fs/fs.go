@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package contains an HTTP file system that works with zip contents.
+// Package fs contains an HTTP file system that works with zip contents.
 package fs
 
 import (
@@ -33,13 +33,13 @@ type statikFS struct {
 	files map[string]*zip.File
 }
 
-// Registers zip contents data, later used to initialize
+// Register registers zip contents data, later used to initialize
 // the statik file system.
 func Register(data string) {
 	zipData = data
 }
 
-// Creates a new file system with the registered zip contents data.
+// New creates a new file system with the registered zip contents data.
 func New() (http.FileSystem, error) {
 	if zipData == "" {
 		return nil, errors.New("statik/fs: No zip data registered.")
