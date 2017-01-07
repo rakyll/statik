@@ -173,7 +173,7 @@ func init() {
 	return f, nil
 }
 
-// Converts zip binary contents to a string literal.
+// FprintZipData converts zip binary contents to a string literal.
 func FprintZipData(dest *bytes.Buffer, zipData []byte) {
 	for _, b := range zipData {
 		if b == '\n' {
