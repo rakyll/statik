@@ -36,9 +36,10 @@ const (
 )
 
 var (
-	flagSrc     = flag.String("src", path.Join(".", "public"), "The path of the source directory.")
-	flagDest    = flag.String("dest", ".", "The destination path of the generated package.")
-	flagNoMtime = flag.Bool("m", false, "Ignore modification times on files.")
+	flagSrc        = flag.String("src", path.Join(".", "public"), "The path of the source directory.")
+	flagDest       = flag.String("dest", ".", "The destination path of the generated package.")
+	flagNoMtime    = flag.Bool("m", false, "Ignore modification times on files.")
+	flagNoCompress = flag.Bool("Z", false, "Do not use compression to shrink the files.")
 )
 
 // mtimeDate holds the arbitrary mtime that we assign to files when
@@ -149,6 +150,9 @@ func generateSource(srcPath string) (file *os.File, err error) {
 			fHeader.SetModTime(mtimeDate)
 		}
 		fHeader.Name = filepath.ToSlash(relPath)
+		if !*flagNoCompress {
+			fHeader.Method = zip.Deflate
+		}
 		f, err := w.CreateHeader(fHeader)
 		if err != nil {
 			return err
