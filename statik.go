@@ -27,6 +27,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
@@ -35,9 +36,14 @@ const (
 )
 
 var (
-	flagSrc  = flag.String("src", path.Join(".", "public"), "The path of the source directory.")
-	flagDest = flag.String("dest", ".", "The destination path of the generated package.")
+	flagSrc     = flag.String("src", path.Join(".", "public"), "The path of the source directory.")
+	flagDest    = flag.String("dest", ".", "The destination path of the generated package.")
+	flagNoMtime = flag.Bool("m", false, "Ignore modification times on files.")
 )
+
+// mtimeDate holds the arbitrary mtime that we assign to files when
+// flagNoMtime is set.
+var mtimeDate = time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
 
 func main() {
 	flag.Parse()
@@ -136,6 +142,11 @@ func generateSource(srcPath string) (file *os.File, err error) {
 		fHeader, err := zip.FileInfoHeader(fi)
 		if err != nil {
 			return err
+		}
+		if *flagNoMtime {
+			// Always use the same modification time so that
+			// the output is deterministic with respect to the file contents.
+			fHeader.SetModTime(mtimeDate)
 		}
 		fHeader.Name = filepath.ToSlash(relPath)
 		f, err := w.CreateHeader(fHeader)
