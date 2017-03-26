@@ -1,19 +1,30 @@
+// Copyright 2014 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package fs
 
 import (
+	"archive/zip"
+	"bytes"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 )
-
-// Example zipData with a single file "index.html" containing 80 bytes of HTML
-const testZipData = "PK\x03\x04\x14\x00\x08\x00\x08\x00\xdc\nzJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\n\x00\x00\x00index.html\xb2\xc9(\xc9\xcd\xb1\xb3\xc9HML\xb1\xb3)\xc9,\xc9I\xb5\xf3H\xcd\xc9\xc9\xd7Q(\xcf/\xcaIQ\xb4\xd1\x87\x08\xda\xe8C\x94$\xe5\xa7T\xa2\xab\x00\x8b\xd9\xe8\x83M\x02\x04\x00\x00\xff\xffPK\x07\x08uR\xdd>:\x00\x00\x00P\x00\x00\x00PK\x01\x02\x14\x03\x14\x00\x08\x00\x08\x00\xdc\nzJuR\xdd>:\x00\x00\x00P\x00\x00\x00\n\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xa4\x81\x00\x00\x00\x00index.htmlPK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x008\x00\x00\x00r\x00\x00\x00\x00\x00"
-
-// Contents of "index.html" file in testZipData
-var testZipDataFileData = []byte("<html><head><title>Hello, world!</title></head><body>Hello, world!</body></html>")
 
 type expectedFile struct {
 	data    []byte
@@ -33,73 +44,73 @@ func TestOpen(t *testing.T) {
 	}{
 		{
 			description: "Files should retain their original file mode and modified time",
-			zipData:     "PK\x03\x04\x14\x00\x08\x00\x08\x00\x075zJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00\x00\x00file.txt\x01\x00\x00\xff\xffPK\x07\x08\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00PK\x01\x02\x14\x03\x14\x00\x08\x00\x08\x00\x075zJ\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\x81\x00\x00\x00\x00file.txtPK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x006\x00\x00\x00;\x00\x00\x00\x00\x00",
+			zipData:     mustZipTree("../testdata/file"),
 			expectedFiles: map[string]expectedFile{
 				"/file.txt": {
-					data:    []byte{},
+					data:    mustReadFile("../testdata/file/file.txt"),
 					isDir:   false,
-					modTime: time.Unix(0, 1490510414000000000).UTC(),
-					mode:    0777,
-					name:    "file.txt",
-					size:    0,
+					modTime: mustStatFile("../testdata/file/file.txt").ModTime(),
+					mode:    mustStatFile("../testdata/file/file.txt").Mode(),
+					name:    mustStatFile("../testdata/file/file.txt").Name,
+					size:    int64(mustStatFile("../testdata/file/file.txt").UncompressedSize64),
 				},
 			},
 		},
 		{
 			description: "Images should successfully unpack",
-			zipData: "PK\x03\x04\x14\x00\x08\x00\x08\x00$3zJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00	\x00\x00\x00pixel.gifr\xf7t\xb3\xb0Ldd`dh`\x00\x81\xff\xff\xff+\xfeda\x041u@\x04H\x86\x81\x89\xd1\x85\xc1\x1a\x10\x00\x00\xff\xffPK\x07\x08x\x13\x95''\x00\x00\x00*\x00\x00\x00PK\x01\x02\x14\x03\x14\x00\x08\x00\x08\x00$3zJx\x13\x95''\x00\x00\x00*\x00\x00\x00	\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xa4\x81\x00\x00\x00\x00pixel.gifPK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x007\x00\x00\x00^\x00\x00\x00\x00\x00",
+			zipData:     mustZipTree("../testdata/image"),
 			expectedFiles: map[string]expectedFile{
 				"/pixel.gif": {
-					data:    []byte{71, 73, 70, 56, 57, 97, 1, 0, 1, 0, 128, 0, 0, 0, 0, 0, 255, 255, 255, 33, 249, 4, 1, 0, 0, 0, 0, 44, 0, 0, 0, 0, 1, 0, 1, 0, 0, 2, 1, 68, 0, 59},
+					data:    mustReadFile("../testdata/image/pixel.gif"),
 					isDir:   false,
-					modTime: time.Unix(0, 1490509508000000000).UTC(),
-					mode:    0644,
-					name:    "pixel.gif",
-					size:    42,
+					modTime: mustStatFile("../testdata/image/pixel.gif").ModTime(),
+					mode:    mustStatFile("../testdata/image/pixel.gif").Mode(),
+					name:    mustStatFile("../testdata/image/pixel.gif").Name,
+					size:    int64(mustStatFile("../testdata/image/pixel.gif").UncompressedSize64),
 				},
 			},
 		},
 		{
 			description: "'index.html' files should be returned at their original path and their directory path",
-			zipData:     "PK\x03\x04\x14\x00\x08\x00\x08\x00\x8b1zJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\n\x00\x00\x00index.html2\x04\x04\x00\x00\xff\xffPK\x07\x08\xb7\xef\xdc\x83\x07\x00\x00\x00\x01\x00\x00\x00PK\x03\x04\x14\x00\x08\x00\x08\x00\x8c1zJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x12\x00\x00\x00sub_dir/index.html2\x02\x04\x00\x00\xff\xffPK\x07\x08\x0d\xbe\xd5\x1a\x07\x00\x00\x00\x01\x00\x00\x00PK\x01\x02\x14\x03\x14\x00\x08\x00\x08\x00\x8b1zJ\xb7\xef\xdc\x83\x07\x00\x00\x00\x01\x00\x00\x00\n\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xa4\x81\x00\x00\x00\x00index.htmlPK\x01\x02\x14\x03\x14\x00\x08\x00\x08\x00\x8c1zJ\x0d\xbe\xd5\x1a\x07\x00\x00\x00\x01\x00\x00\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xa4\x81?\x00\x00\x00sub_dir/index.htmlPK\x05\x06\x00\x00\x00\x00\x02\x00\x02\x00x\x00\x00\x00\x86\x00\x00\x00\x00\x00",
+			zipData:     mustZipTree("../testdata/index"),
 			expectedFiles: map[string]expectedFile{
 				"/index.html": {
-					data:    []byte("1"),
+					data:    mustReadFile("../testdata/index/index.html"),
 					isDir:   false,
-					modTime: time.Unix(0, 1490508742000000000).UTC(),
-					mode:    0644,
-					name:    "index.html",
-					size:    1,
+					modTime: mustStatFile("../testdata/index/index.html").ModTime(),
+					mode:    mustStatFile("../testdata/index/index.html").Mode(),
+					name:    mustStatFile("../testdata/index/index.html").Name,
+					size:    int64(mustStatFile("../testdata/index/index.html").UncompressedSize64),
 				},
 				"/": {
-					data:    []byte("1"),
+					data:    mustReadFile("../testdata/index/index.html"),
 					isDir:   true,
-					modTime: time.Unix(0, 1490508742000000000).UTC(),
-					mode:    0644,
-					name:    "index.html",
-					size:    1,
+					modTime: mustStatFile("../testdata/index/index.html").ModTime(),
+					mode:    mustStatFile("../testdata/index/index.html").Mode(),
+					name:    mustStatFile("../testdata/index/index.html").Name,
+					size:    int64(mustStatFile("../testdata/index/index.html").UncompressedSize64),
 				},
 				"/sub_dir/index.html": {
-					data:    []byte("2"),
+					data:    mustReadFile("../testdata/index/sub_dir/index.html"),
 					isDir:   false,
-					modTime: time.Unix(0, 1490508744000000000).UTC(),
-					mode:    0644,
-					name:    "index.html",
-					size:    1,
+					modTime: mustStatFile("../testdata/index/sub_dir/index.html").ModTime(),
+					mode:    mustStatFile("../testdata/index/sub_dir/index.html").Mode(),
+					name:    mustStatFile("../testdata/index/sub_dir/index.html").Name,
+					size:    int64(mustStatFile("../testdata/index/sub_dir/index.html").UncompressedSize64),
 				},
 				"/sub_dir/": {
-					data:    []byte("2"),
+					data:    mustReadFile("../testdata/index/sub_dir/index.html"),
 					isDir:   true,
-					modTime: time.Unix(0, 1490508744000000000).UTC(),
-					mode:    0644,
-					name:    "index.html",
-					size:    1,
+					modTime: mustStatFile("../testdata/index/sub_dir/index.html").ModTime(),
+					mode:    mustStatFile("../testdata/index/sub_dir/index.html").Mode(),
+					name:    mustStatFile("../testdata/index/sub_dir/index.html").Name,
+					size:    int64(mustStatFile("../testdata/index/sub_dir/index.html").UncompressedSize64),
 				},
 			},
 		},
 		{
 			description: "Missing files should return os.ErrNotExist",
-			zipData:     "PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+			zipData:     mustZipTree("../testdata/file"),
 			expectedFiles: map[string]expectedFile{
 				"/missing.txt": {
 					err: os.ErrNotExist,
@@ -107,95 +118,87 @@ func TestOpen(t *testing.T) {
 			},
 		},
 	}
-	for _, test := range tests {
-		Register(test.zipData)
-		fs, err := New()
-		if err != nil {
-			t.Errorf("%s: Error creating new fs: %s",
-				test.description,
-				err)
-		}
-		for name, expectedFile := range test.expectedFiles {
-			f, err := fs.Open(name)
-			if expectedFile.err != err {
-				t.Errorf(
-					"%s: Expected and actual error opening file different for file %q.\nExpected:\t%s\nActual:\t\t%s",
-					test.description,
-					name,
-					expectedFile.err,
-					err)
-			}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			Register(tc.zipData)
+			fs, err := New()
 			if err != nil {
-				continue
+				t.Errorf("Error creating new fs: %s", err)
+				return
 			}
-			b, err := ioutil.ReadAll(f)
-			if err != nil {
-				t.Errorf(
-					"%s: Error reading file %q: %s",
-					test.description,
-					name,
-					err)
-				continue
+			for name, expectedFile := range tc.expectedFiles {
+				f, err := fs.Open(name)
+				if expectedFile.err != err {
+					t.Errorf(
+						"Expected and actual error opening file different for file %q.\nExpected:\t%s\nActual:\t\t%s",
+						name,
+						expectedFile.err,
+						err)
+				}
+				if err != nil {
+					continue
+				}
+				b, err := ioutil.ReadAll(f)
+				if err != nil {
+					t.Errorf(
+						"Error reading file %q: %s", name, err)
+					continue
+				}
+				if !reflect.DeepEqual(expectedFile.data, b) {
+					t.Errorf(
+						"Expected and actual file data different for file %q.\nExpected:\t%v\nActual:\t\t%v",
+						name,
+						expectedFile.data,
+						b)
+				}
+				stat, _ := f.Stat()
+				if expectedFile.isDir != stat.IsDir() {
+					t.Errorf(
+						"Expected and actual file IsDir different for file %q.\nExpected:\t%t\nActual:\t\t%t",
+						name,
+						expectedFile.isDir,
+						stat.IsDir())
+				}
+				if expectedFile.modTime != stat.ModTime() {
+					t.Errorf(
+						"Expected and actual file ModTime different for file %q.\nExpected:\t%s (%d)\nActual:\t\t%s (%d)",
+						name,
+						expectedFile.modTime,
+						expectedFile.modTime.UnixNano(),
+						stat.ModTime(),
+						stat.ModTime().UnixNano())
+				}
+				if expectedFile.mode != stat.Mode() {
+					t.Errorf(
+						"Expected and actual file Mode different for file %q.\nExpected:\t%s\nActual:\t\t%s",
+						name,
+						expectedFile.mode,
+						stat.Mode())
+				}
+				if expectedFile.name != stat.Name() {
+					t.Errorf(
+						"Expected and actual file Name different for file %q.\nExpected:\t%s\nActual:\t\t%s",
+						name,
+						expectedFile.name,
+						stat.Name())
+				}
+				if expectedFile.size != stat.Size() {
+					t.Errorf(
+						"Expected and actual file Size different for file %q.\nExpected:\t%d\nActual:\t\t%d",
+						name,
+						expectedFile.size,
+						stat.Size())
+				}
 			}
-			if !reflect.DeepEqual(expectedFile.data, b) {
-				t.Errorf(
-					"%s: Expected and actual file data different for file %q.\nExpected:\t%v\nActual:\t\t%v",
-					test.description,
-					name,
-					expectedFile.data,
-					b)
-			}
-			stat, _ := f.Stat()
-			if expectedFile.isDir != stat.IsDir() {
-				t.Errorf(
-					"%s: Expected and actual file IsDir different for file %q.\nExpected:\t%t\nActual:\t\t%t",
-					test.description,
-					name,
-					expectedFile.isDir,
-					stat.IsDir())
-			}
-			if expectedFile.modTime != stat.ModTime() {
-				t.Errorf(
-					"%s: Expected and actual file ModTime different for file %q.\nExpected:\t%s (%d)\nActual:\t\t%s (%d)",
-					test.description,
-					name,
-					expectedFile.modTime,
-					expectedFile.modTime.UTC().UnixNano(),
-					stat.ModTime(),
-					stat.ModTime().UTC().UnixNano())
-			}
-			if expectedFile.mode != stat.Mode() {
-				t.Errorf(
-					"%s: Expected and actual file Mode different for file %q.\nExpected:\t%s\nActual:\t\t%s",
-					test.description,
-					name,
-					expectedFile.mode,
-					stat.Mode())
-			}
-			if expectedFile.name != stat.Name() {
-				t.Errorf(
-					"%s: Expected and actual file Name different for file %q.\nExpected:\t%s\nActual:\t\t%s",
-					test.description,
-					name,
-					expectedFile.name,
-					stat.Name())
-			}
-			if expectedFile.size != stat.Size() {
-				t.Errorf(
-					"%s: Expected and actual file Size different for file %q.\nExpected:\t%d\nActual:\t\t%d",
-					test.description,
-					name,
-					expectedFile.size,
-					stat.Size())
-			}
-		}
+		})
 	}
 }
 
 // Test that calling Open by many goroutines concurrently continues
 // to return the expected result.
 func TestOpen_Parallel(t *testing.T) {
-	Register(testZipData)
+	indexFileContents := mustReadFile("../testdata/index/index.html")
+	Register(mustZipTree("../testdata/index"))
 	fs, err := New()
 	if err != nil {
 		t.Fatalf("Error creating new fs: %s", err)
@@ -215,10 +218,10 @@ func TestOpen_Parallel(t *testing.T) {
 				t.Errorf("Error reading file '/index.html': %s", err)
 				return
 			}
-			if !reflect.DeepEqual(testZipDataFileData, b) {
+			if !reflect.DeepEqual(indexFileContents, b) {
 				t.Errorf(
 					"Expected and actual file data different for file '/index.html'.\nExpected:\t%v\nActual:\t\t%v",
-					testZipDataFileData,
+					indexFileContents,
 					b)
 			}
 		}()
@@ -227,7 +230,7 @@ func TestOpen_Parallel(t *testing.T) {
 }
 
 func BenchmarkOpen(b *testing.B) {
-	Register(testZipData)
+	Register(mustZipTree("../testdata/index"))
 	fs, err := New()
 	if err != nil {
 		b.Fatalf("Error creating new fs: %s", err)
@@ -240,4 +243,87 @@ func BenchmarkOpen(b *testing.B) {
 			}
 		}
 	})
+}
+
+// mustZipTree walks on the source path and returns the zipped file contents
+// as a string. Panics on any errors.
+func mustZipTree(srcPath string) string {
+	var out bytes.Buffer
+	absPath, err := filepath.Abs(srcPath)
+	if err != nil {
+		panic(err)
+	}
+	absPathWithoutSymlinks, err := filepath.EvalSymlinks(absPath)
+	if err != nil {
+		panic(err)
+	}
+	w := zip.NewWriter(&out)
+	if err := filepath.Walk(absPathWithoutSymlinks, func(path string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		// Ignore directories and hidden files.
+		// No entry is needed for directories in a zip file.
+		// Each file is represented with a path, no directory
+		// entities are required to build the hierarchy.
+		if fi.IsDir() || strings.HasPrefix(fi.Name(), ".") {
+			return nil
+		}
+		relPath, err := filepath.Rel(absPathWithoutSymlinks, path)
+		if err != nil {
+			return err
+		}
+		b, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		fHeader, err := zip.FileInfoHeader(fi)
+		if err != nil {
+			return err
+		}
+		fHeader.Name = filepath.ToSlash(relPath)
+		fHeader.Method = zip.Deflate
+		f, err := w.CreateHeader(fHeader)
+		if err != nil {
+			return err
+		}
+		_, err = f.Write(b)
+		return err
+	}); err != nil {
+		panic(err)
+	}
+	if err := w.Close(); err != nil {
+		panic(err)
+	}
+	return string(out.Bytes())
+}
+
+// mustReadFile returns the file contents. Panics on any errors.
+func mustReadFile(filename string) []byte {
+	absPath, err := filepath.Abs(filename)
+	if err != nil {
+		panic(err)
+	}
+	absPathWithoutSymlinks, err := filepath.EvalSymlinks(absPath)
+	if err != nil {
+		panic(err)
+	}
+	b, err := ioutil.ReadFile(absPathWithoutSymlinks)
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
+
+// mustStatFile returns the zip file info header. Panics on any errors.
+func mustStatFile(filename string) *zip.FileHeader {
+	info, err := os.Stat(filename)
+	if err != nil {
+		panic(err)
+	}
+	zipInfo, err := zip.FileInfoHeader(info)
+	if err != nil {
+		panic(err)
+	}
+	return zipInfo
 }
