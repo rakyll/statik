@@ -40,6 +40,7 @@ var (
 	flagDest       = flag.String("dest", ".", "The destination path of the generated package.")
 	flagNoMtime    = flag.Bool("m", false, "Ignore modification times on files.")
 	flagNoCompress = flag.Bool("Z", false, "Do not use compression to shrink the files.")
+	flagForce      = flag.Bool("f", false, "Overwrite destination file if it already exists.")
 )
 
 // mtimeDate holds the arbitrary mtime that we assign to files when
@@ -85,7 +86,11 @@ func rename(src, dest string) error {
 	}()
 
 	if _, err = os.Stat(dest); !os.IsNotExist(err) {
-		return fmt.Errorf("file %q already exists", dest)
+		if *flagForce {
+			os.Remove(dest)
+		} else {
+			return fmt.Errorf("file %q already exists", dest)
+		}
 	}
 
 	wc, err := os.Create(dest)
