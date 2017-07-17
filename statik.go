@@ -87,7 +87,9 @@ func rename(src, dest string) error {
 
 	if _, err = os.Stat(dest); !os.IsNotExist(err) {
 		if *flagForce {
-			os.Remove(dest)
+			if err = os.Remove(dest); err != nil {
+				return fmt.Errorf("file %q could not be deleted", dest)
+			}
 		} else {
 			return fmt.Errorf("file %q already exists", dest)
 		}
