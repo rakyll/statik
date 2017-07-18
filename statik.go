@@ -91,7 +91,7 @@ func rename(src, dest string) error {
 				return fmt.Errorf("file %q could not be deleted", dest)
 			}
 		} else {
-			return fmt.Errorf("file %q already exists", dest)
+			return fmt.Errorf("file %q already exists; use -f to overwrite", dest)
 		}
 	}
 
