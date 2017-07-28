@@ -1,6 +1,6 @@
 # statik
 
-[![Build Status](https://travis-ci.org/rakyll/statik.png?branch=master)](https://travis-ci.org/rakyll/statik)
+[![Build Status](https://travis-ci.org/rakyll/statik.svg?branch=master)](https://travis-ci.org/rakyll/statik)
 
 statik allows you to embed a directory of static files into your Go binary to be later served from an http.FileSystem.
 
