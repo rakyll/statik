@@ -29,11 +29,16 @@ import (
 
 // ...
 
-statikFS, _ := fs.New()
-http.ListenAndServe(":8080", http.FileServer(statikFS))
+  statikFS, err := fs.New()
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(statikFS)))
+  http.ListenAndServe(":8080", nil)
 ~~~
 
-Visit http://localhost:8080/path/to/file to see your file.
+Visit http://localhost:8080/public/path/to/file to see your file.
 
 There is also a working example under [example](https://github.com/rakyll/statik/tree/master/example) directory, follow the instructions to build and run it.
 
