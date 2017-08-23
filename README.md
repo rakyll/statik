@@ -42,4 +42,4 @@ Visit http://localhost:8080/public/path/to/file to see your file.
 
 There is also a working example under [example](https://github.com/rakyll/statik/tree/master/example) directory, follow the instructions to build and run it.
 
-Note: The idea and the implementation are hijacked from [camlistore](http://camlistore.org/). I decided to decouple it from its codebase due to the fact I'm actively in need of a similar solution for many of my projects. ![Analytics](https://ga-beacon.appspot.com/UA-46881978-1/statik?pixel)
+Note: The idea and the implementation are hijacked from [camlistore](http://camlistore.org/). I decided to decouple it from its codebase due to the fact I'm actively in need of a similar solution for many of my projects.
