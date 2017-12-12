@@ -28,6 +28,33 @@ import (
 
 var zipData string
 
+// WalkFunc is the type of the function called for each file visited by Walk.
+// It is passed the file's path and the file itself.
+type WalkFunc func(string, http.File) error
+
+// Walk visits each file in the statik filesystem, and
+// invokes the given WalkFunc. If an error is returned from the
+// walker, processing stops.
+// TODO: make the ordering here match the behavior of filepath.Walk.
+func Walk(hfs http.FileSystem, walker WalkFunc) error {
+	fs, ok := hfs.(*statikFS)
+	if !ok {
+		return fmt.Errorf("statik/fs: not a statikFS: %T", hfs)
+	}
+
+	for n, f := range fs.files {
+		// Skip the statik.go file, if present
+		if strings.Contains(n, "statik.go") {
+			continue
+		}
+		if err := walker(n, newHTTPFile(f, f.IsDir())); err != nil {
+			return fmt.Errorf("statik/fs: walk error %s - %s", n, err)
+		}
+	}
+
+	return nil
+}
+
 // file holds unzipped read-only file contents and file metadata.
 type file struct {
 	os.FileInfo
