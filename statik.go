@@ -176,9 +176,7 @@ func generateSource(srcPath string) (file *os.File, err error) {
 
 	var tags string
 	if *flagTags != "" {
-		tags = "// +build " + *flagTags + "\n"
-	} else {
-		tags = "\n"
+		tags = "\n// +build " + *flagTags + "\n"
 	}
 
 	// then embed it as a quoted string
