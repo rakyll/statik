@@ -31,9 +31,10 @@ import (
 )
 
 const (
-	namePackage    = "statik"
 	nameSourceFile = "statik.go"
 )
+
+var namePackage string
 
 var (
 	flagSrc        = flag.String("src", path.Join(".", "public"), "The path of the source directory.")
@@ -42,6 +43,7 @@ var (
 	flagNoCompress = flag.Bool("Z", false, "Do not use compression to shrink the files.")
 	flagForce      = flag.Bool("f", false, "Overwrite destination file if it already exists.")
 	flagTags       = flag.String("tags", "", "Write build constraint tags")
+	flagPkg        = flag.String("p", "statik", "Name of the generated package")
 )
 
 // mtimeDate holds the arbitrary mtime that we assign to files when
@@ -50,6 +52,8 @@ var mtimeDate = time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
 
 func main() {
 	flag.Parse()
+
+	namePackage = *flagPkg
 
 	file, err := generateSource(*flagSrc)
 	if err != nil {
