@@ -9,3 +9,6 @@ go:
 install:
   - go build -v
   - ./statik -src=./example/public -dest=./example/
+
+script:
+  - go test -v -bench=. ./...
