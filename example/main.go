@@ -15,7 +15,7 @@ import (
 func main() {
 	statikFS, err := fs.New()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err)
 	}
 
 	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(statikFS)))
