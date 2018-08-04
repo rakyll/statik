@@ -159,7 +159,7 @@ func generateSource(srcPath string) (file *os.File, err error) {
 		if *flagNoMtime {
 			// Always use the same modification time so that
 			// the output is deterministic with respect to the file contents.
-			fHeader.SetModTime(mtimeDate)
+			fHeader.Modified = mtimeDate
 		}
 		fHeader.Name = filepath.ToSlash(relPath)
 		if !*flagNoCompress {
@@ -190,7 +190,7 @@ func generateSource(srcPath string) (file *os.File, err error) {
 package %s
 
 import (
-	"github.com/rakyll/statik/fs"
+	"github.com/tgulacsi/statik/fs"
 )
 
 func init() {
