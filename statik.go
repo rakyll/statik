@@ -190,7 +190,7 @@ func generateSource(srcPath string) (file *os.File, err error) {
 package %s
 
 import (
-	"github.com/tgulacsi/statik/fs"
+	"github.com/rakyll/statik/fs"
 )
 
 func init() {
