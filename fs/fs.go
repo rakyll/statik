@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -129,6 +130,9 @@ type httpFile struct {
 
 // Read reads bytes into p, returns the number of read bytes.
 func (f *httpFile) Read(p []byte) (n int, err error) {
+	if f.reader == nil && f.isDir {
+		return 0, io.EOF
+	}
 	return f.reader.Read(p)
 }
 

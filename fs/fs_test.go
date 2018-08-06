@@ -86,14 +86,6 @@ func TestOpen(t *testing.T) {
 					name:    indexHTMLHeader.Name,
 					size:    int64(indexHTMLHeader.UncompressedSize64),
 				},
-				"/": {
-					data:    mustReadFile("../testdata/index/index.html"),
-					isDir:   true,
-					modTime: indexHTMLHeader.ModTime(),
-					mode:    indexHTMLHeader.Mode(),
-					name:    indexHTMLHeader.Name,
-					size:    int64(indexHTMLHeader.UncompressedSize64),
-				},
 				"/sub_dir/index.html": {
 					data:    mustReadFile("../testdata/index/sub_dir/index.html"),
 					isDir:   false,
@@ -102,13 +94,15 @@ func TestOpen(t *testing.T) {
 					name:    subdirIndexHTMLHeader.Name,
 					size:    int64(subdirIndexHTMLHeader.UncompressedSize64),
 				},
-				"/sub_dir/": {
-					data:    mustReadFile("../testdata/index/sub_dir/index.html"),
-					isDir:   true,
-					modTime: subdirIndexHTMLHeader.ModTime(),
-					mode:    subdirIndexHTMLHeader.Mode(),
-					name:    subdirIndexHTMLHeader.Name,
-					size:    int64(subdirIndexHTMLHeader.UncompressedSize64),
+				"/": {
+					isDir: true,
+					mode:  os.ModeDir | 0755,
+					name:  "/",
+				},
+				"/sub_dir": {
+					isDir: true,
+					mode:  os.ModeDir | 0755,
+					name:  "/sub_dir",
 				},
 			},
 		},
@@ -138,13 +132,15 @@ func TestOpen(t *testing.T) {
 				if err != nil {
 					continue
 				}
-				b, err := ioutil.ReadAll(f)
-				if err != nil {
-					t.Errorf("ioutil.ReadAll(%v) = %v", name, err)
-					continue
-				}
-				if !reflect.DeepEqual(wantFile.data, b) {
-					t.Errorf("%v data = %q; want %q", name, b, wantFile.data)
+				if !wantFile.isDir {
+					b, err := ioutil.ReadAll(f)
+					if err != nil {
+						t.Errorf("ioutil.ReadAll(%v) = %v", name, err)
+						continue
+					}
+					if !reflect.DeepEqual(wantFile.data, b) {
+						t.Errorf("%v data = %q; want %q", name, b, wantFile.data)
+					}
 				}
 				stat, err := f.Stat()
 				if err != nil {
