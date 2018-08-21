@@ -1,13 +1,11 @@
 language: go
 
 go:
-  - 1.8.x
-  - 1.9.x
- 
+  - 1.10.3
 
 install:
   - go build -v
-  - ./statik -src=./example/public -dest=./example/
+  - ./statik -f -src=./example/public -dest=./example/
 
 script:
   - go test -v -bench=. ./...

@@ -20,10 +20,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
 	"strings"
+	"time"
 )
 
 var zipData string
@@ -32,6 +35,7 @@ var zipData string
 type file struct {
 	os.FileInfo
 	data []byte
+	fs   *statikFS
 }
 
 type statikFS struct {
@@ -54,19 +58,38 @@ func New() (http.FileSystem, error) {
 	if err != nil {
 		return nil, err
 	}
-	files := make(map[string]file)
+	files := make(map[string]file, len(zipReader.File))
+	fs := &statikFS{files: files}
 	for _, zipFile := range zipReader.File {
-		unzipped, err := unzip(zipFile)
+		fi := zipFile.FileInfo()
+		f := file{FileInfo: fi, fs: fs}
+		f.data, err = unzip(zipFile)
 		if err != nil {
 			return nil, fmt.Errorf("statik/fs: error unzipping file %q: %s", zipFile.Name, err)
 		}
-		files["/"+zipFile.Name] = file{
-			FileInfo: zipFile.FileInfo(),
-			data:     unzipped,
+		files["/"+zipFile.Name] = f
+	}
+	for fn := range files {
+		dn := path.Dir(fn)
+		if _, ok := files[dn]; !ok {
+			files[dn] = file{FileInfo: dirInfo{dn}, fs: fs}
 		}
 	}
-	return &statikFS{files: files}, nil
+	return fs, nil
 }
+
+var _ = os.FileInfo(dirInfo{})
+
+type dirInfo struct {
+	name string
+}
+
+func (di dirInfo) Name() string       { return di.name }
+func (di dirInfo) Size() int64        { return 0 }
+func (di dirInfo) Mode() os.FileMode  { return 0755 | os.ModeDir }
+func (di dirInfo) ModTime() time.Time { return time.Time{} }
+func (di dirInfo) IsDir() bool        { return true }
+func (di dirInfo) Sys() interface{}   { return nil }
 
 func unzip(zf *zip.File) ([]byte, error) {
 	rc, err := zf.Open()
@@ -83,26 +106,17 @@ func unzip(zf *zip.File) ([]byte, error) {
 // in the requested directory, if that file exists.
 func (fs *statikFS) Open(name string) (http.File, error) {
 	name = strings.Replace(name, "//", "/", -1)
-	f, ok := fs.files[name]
-	if ok {
-		return newHTTPFile(f, false), nil
+	if f, ok := fs.files[name]; ok {
+		return newHTTPFile(f), nil
 	}
-	// The file doesn't match, but maybe it's a directory,
-	// thus we should look for index.html
-	indexName := strings.Replace(name+"/index.html", "//", "/", -1)
-	f, ok = fs.files[indexName]
-	if !ok {
-		return nil, os.ErrNotExist
-	}
-	return newHTTPFile(f, true), nil
+	return nil, os.ErrNotExist
 }
 
-func newHTTPFile(file file, isDir bool) *httpFile {
-	return &httpFile{
-		file:   file,
-		reader: bytes.NewReader(file.data),
-		isDir:  isDir,
+func newHTTPFile(file file) *httpFile {
+	if file.IsDir() {
+		return &httpFile{file: file, isDir: true}
 	}
+	return &httpFile{file: file, reader: bytes.NewReader(file.data)}
 }
 
 // httpFile represents an HTTP file and acts as a bridge
@@ -116,6 +130,9 @@ type httpFile struct {
 
 // Read reads bytes into p, returns the number of read bytes.
 func (f *httpFile) Read(p []byte) (n int, err error) {
+	if f.reader == nil && f.isDir {
+		return 0, io.EOF
+	}
 	return f.reader.Read(p)
 }
 
@@ -137,8 +154,17 @@ func (f *httpFile) IsDir() bool {
 // Readdir returns an empty slice of files, directory
 // listing is disabled.
 func (f *httpFile) Readdir(count int) ([]os.FileInfo, error) {
-	// directory listing is disabled.
-	return make([]os.FileInfo, 0), nil
+	var fis []os.FileInfo
+	if !f.isDir {
+		return fis, nil
+	}
+	prefix := f.Name()
+	for fn, f := range f.file.fs.files {
+		if strings.HasPrefix(fn, prefix) && len(fn) > len(prefix) {
+			fis = append(fis, f.FileInfo)
+		}
+	}
+	return fis, nil
 }
 
 func (f *httpFile) Close() error {
