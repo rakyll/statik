@@ -37,14 +37,15 @@ const (
 var namePackage string
 
 var (
-	flagSrc        = flag.String("src", path.Join(".", "public"), "The path of the source directory.")
-	flagDest       = flag.String("dest", ".", "The destination path of the generated package.")
-	flagNoMtime    = flag.Bool("m", false, "Ignore modification times on files.")
-	flagNoCompress = flag.Bool("Z", false, "Do not use compression to shrink the files.")
-	flagForce      = flag.Bool("f", false, "Overwrite destination file if it already exists.")
-	flagTags       = flag.String("tags", "", "Write build constraint tags")
-	flagPkg        = flag.String("p", "statik", "Name of the generated package")
-	flagPkgCmt     = flag.String("c", "Package statik contains static assets.", "The package comment. An empty value disables this comment.\n")
+	flagAllowHidden = flag.Bool("H", false, "Allow hidden files to be collected.")
+	flagDest        = flag.String("dest", ".", "The destination path of the generated package.")
+	flagForce       = flag.Bool("f", false, "Overwrite destination file if it already exists.")
+	flagNoCompress  = flag.Bool("Z", false, "Do not use compression to shrink the files.")
+	flagNoMtime     = flag.Bool("m", false, "Ignore modification times on files.")
+	flagPkg         = flag.String("p", "statik", "Name of the generated package")
+	flagPkgCmt      = flag.String("c", "Package statik contains static assets.", "The package comment. An empty value disables this comment.\n")
+	flagSrc         = flag.String("src", path.Join(".", "public"), "The path of the source directory.")
+	flagTags        = flag.String("tags", "", "Write build constraint tags")
 )
 
 // mtimeDate holds the arbitrary mtime that we assign to files when
@@ -142,7 +143,7 @@ func generateSource(srcPath string) (file *os.File, err error) {
 		// No entry is needed for directories in a zip file.
 		// Each file is represented with a path, no directory
 		// entities are required to build the hierarchy.
-		if fi.IsDir() || strings.HasPrefix(fi.Name(), ".") {
+		if fi.IsDir() || (*flagAllowHidden == false && strings.HasPrefix(fi.Name(), ".")) {
 			return nil
 		}
 		relPath, err := filepath.Rel(srcPath, path)
