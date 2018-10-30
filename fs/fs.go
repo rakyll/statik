@@ -160,7 +160,7 @@ func (f *httpFile) Readdir(count int) ([]os.FileInfo, error) {
 	}
 	prefix := f.Name()
 	for fn, f := range f.file.fs.files {
-		if strings.HasPrefix(fn, prefix) && len(fn) > len(prefix) {
+		if strings.HasPrefix(fn, prefix) && len(fn) > len(prefix) && strings.Index(strings.TrimPrefix(fn, prefix), "/") < 1 {
 			fis = append(fis, f.FileInfo)
 		}
 	}
