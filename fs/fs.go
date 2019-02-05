@@ -48,6 +48,17 @@ func Register(data string) {
 	zipData = data
 }
 
+// RegisterReader registers zip contents data from a reader, later
+// used to initialize the statik file system
+func RegisterReader(data io.Reader) {
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(data); err != nil {
+		zipData = ""
+		return
+	}
+	zipData = buf.String()
+}
+
 // New creates a new file system with the registered zip contents data.
 // It unzips all files and stores them in an in-memory map.
 func New() (http.FileSystem, error) {
@@ -76,6 +87,12 @@ func New() (http.FileSystem, error) {
 		}
 	}
 	return fs, nil
+}
+
+// NewReader creates a new file system from passed zip contents data.
+func NewReader(data io.Reader) (http.FileSystem, error) {
+	RegisterReader(data)
+	return New()
 }
 
 var _ = os.FileInfo(dirInfo{})
