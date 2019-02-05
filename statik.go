@@ -197,14 +197,24 @@ func generateSource(srcPath string) (file *os.File, err error) {
 package %s
 
 import (
+	"io"
+	"strings"
+
 	"github.com/rakyll/statik/fs"
 )
 
-func init() {
-	data := "`, tags, comment, namePackage)
+func Data() string {
+	return "`, tags, comment, namePackage)
 	FprintZipData(&qb, buffer.Bytes())
 	fmt.Fprint(&qb, `"
-	fs.Register(data)
+}
+
+func NewReader() io.Reader {
+	return strings.NewReader(Data())
+}
+
+func init() {
+	fs.Register(Data())
 }
 `)
 
