@@ -72,7 +72,7 @@ func New() (http.FileSystem, error) {
 	for fn := range files {
 		dn := path.Dir(fn)
 		if _, ok := files[dn]; !ok {
-			files[dn] = file{FileInfo: dirInfo{dn}, fs: fs}
+			files[dn] = file{FileInfo: dirInfo{path.Base(dn)}, fs: fs}
 		}
 	}
 	return fs, nil
@@ -107,22 +107,23 @@ func unzip(zf *zip.File) ([]byte, error) {
 func (fs *statikFS) Open(name string) (http.File, error) {
 	name = strings.Replace(name, "//", "/", -1)
 	if f, ok := fs.files[name]; ok {
-		return newHTTPFile(f), nil
+		return newHTTPFile(f, name), nil
 	}
 	return nil, os.ErrNotExist
 }
 
-func newHTTPFile(file file) *httpFile {
+func newHTTPFile(file file, filePath string) *httpFile {
 	if file.IsDir() {
-		return &httpFile{file: file, isDir: true}
+		return &httpFile{file: file, filePath: filePath, isDir: true}
 	}
-	return &httpFile{file: file, reader: bytes.NewReader(file.data)}
+	return &httpFile{file: file, filePath: filePath, reader: bytes.NewReader(file.data)}
 }
 
 // httpFile represents an HTTP file and acts as a bridge
 // between file and http.File.
 type httpFile struct {
 	file
+	filePath string
 
 	reader *bytes.Reader
 	isDir  bool
@@ -158,9 +159,9 @@ func (f *httpFile) Readdir(count int) ([]os.FileInfo, error) {
 	if !f.isDir {
 		return fis, nil
 	}
-	prefix := f.Name()
+	prefix := f.filePath
 	for fn, f := range f.file.fs.files {
-		if strings.HasPrefix(fn, prefix) && len(fn) > len(prefix) {
+		if strings.HasPrefix(fn, prefix) && len(fn) > len(prefix) && strings.Index(strings.TrimPrefix(strings.TrimPrefix(fn, prefix), "/"), "/") < 1 {
 			fis = append(fis, f.FileInfo)
 		}
 	}

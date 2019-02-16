@@ -16,7 +16,9 @@ package fs
 import (
 	"archive/zip"
 	"bytes"
+	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -102,7 +104,7 @@ func TestOpen(t *testing.T) {
 				"/sub_dir": {
 					isDir: true,
 					mode:  os.ModeDir | 0755,
-					name:  "/sub_dir",
+					name:  "sub_dir",
 				},
 			},
 		},
@@ -197,6 +199,65 @@ func TestOpen_Parallel(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+func mustIdenticalDirs(t *testing.T, d http.FileSystem, fs http.FileSystem, compareStr string) {
+	f, err := d.Open(compareStr)
+	if err != nil {
+		t.Fatalf("Open() = %v", err)
+	}
+	fsf, err := fs.Open(compareStr)
+	if err != nil {
+		t.Fatalf("Open (FS)() = %v", err)
+	}
+	fi, err := f.Readdir(-1)
+	if err != nil {
+		t.Fatalf("rdir() = %v", err)
+	}
+	fsi, err := fsf.Readdir(-1)
+	if err != nil {
+		t.Fatalf("rdir (FS)() = %v", err)
+	}
+	if len(fi) != len(fsi) {
+		for i := range fi {
+			fmt.Printf("-> %s\n", fi[i].Name())
+		}
+		for i := range fsi {
+			fmt.Printf("!= %s\n", fsi[i].Name())
+		}
+		t.Fatalf("readdir sizes don't match")
+	}
+	for i := range fi {
+		failed := true
+		for j := range fsi {
+			if fi[i].Name() == fsi[j].Name() {
+				failed = false
+				break
+			}
+
+		}
+		if failed {
+			for j := range fsi {
+				fmt.Printf("-> %s != %s\n", fi[i].Name(), fsi[j].Name())
+
+			}
+			t.Errorf("Failed")
+		}
+
+	}
+}
+
+func TestReadDir(t *testing.T) {
+	Register(mustZipTree("../testdata"))
+	fs, err := New()
+	if err != nil {
+		t.Fatalf("New() = %v", err)
+	}
+	d := http.Dir("../testdata")
+
+	mustIdenticalDirs(t, d, fs, "/")
+	mustIdenticalDirs(t, d, fs, "/index")
+
 }
 
 func BenchmarkOpen(b *testing.B) {
