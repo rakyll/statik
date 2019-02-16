@@ -70,9 +70,14 @@ func New() (http.FileSystem, error) {
 		files["/"+zipFile.Name] = f
 	}
 	for fn := range files {
+		// Recursively go down the folders until get to the /
 		dn := path.Dir(fn)
-		if _, ok := files[dn]; !ok {
-			files[dn] = file{FileInfo: dirInfo{path.Base(dn)}, fs: fs}
+		for dn != fn {
+			if _, ok := files[dn]; !ok {
+				files[dn] = file{FileInfo: dirInfo{path.Base(dn)}, fs: fs}
+			}
+			fn = dn
+			dn = path.Dir(fn)
 		}
 	}
 	return fs, nil
