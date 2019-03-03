@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -155,7 +156,7 @@ func TestOpen(t *testing.T) {
 				if got, want := stat.Mode(), wantFile.mode; got != want {
 					t.Errorf("Mode(%v) = %v; want %v", name, got, want)
 				}
-				if got, want := stat.Name(), wantFile.name; got != want {
+				if got, want := stat.Name(), path.Base(wantFile.name); got != want {
 					t.Errorf("Name(%v) = %v; want %v", name, got, want)
 				}
 				if got, want := stat.Size(), wantFile.size; got != want {
