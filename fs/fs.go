@@ -70,9 +70,14 @@ func New() (http.FileSystem, error) {
 		files["/"+zipFile.Name] = f
 	}
 	for fn := range files {
-		dn := path.Dir(fn)
-		if _, ok := files[dn]; !ok {
-			files[dn] = file{FileInfo: dirInfo{dn}, fs: fs}
+		// go up directories recursively in order to care deep directory
+		for dn := path.Dir(fn); dn != fn; {
+			if _, ok := files[dn]; !ok {
+				files[dn] = file{FileInfo: dirInfo{dn}, fs: fs}
+			} else {
+				break
+			}
+			fn, dn = dn, path.Dir(dn)
 		}
 	}
 	return fs, nil
@@ -84,7 +89,7 @@ type dirInfo struct {
 	name string
 }
 
-func (di dirInfo) Name() string       { return di.name }
+func (di dirInfo) Name() string       { return path.Base(di.name) }
 func (di dirInfo) Size() int64        { return 0 }
 func (di dirInfo) Mode() os.FileMode  { return 0755 | os.ModeDir }
 func (di dirInfo) ModTime() time.Time { return time.Time{} }
@@ -158,7 +163,11 @@ func (f *httpFile) Readdir(count int) ([]os.FileInfo, error) {
 	if !f.isDir {
 		return fis, nil
 	}
-	prefix := f.Name()
+	di, ok := f.FileInfo.(dirInfo)
+	if !ok {
+		return nil, fmt.Errorf("failed to draw dirInfo from *httpFile: %q", f.Name())
+	}
+	prefix := di.name // absolute path name
 	for fn, f := range f.file.fs.files {
 		rel := strings.TrimPrefix(fn, prefix+"/")
 		// pick up only the entries just under the directory and
