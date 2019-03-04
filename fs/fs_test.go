@@ -16,6 +16,7 @@ package fs
 import (
 	"archive/zip"
 	"bytes"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -237,6 +238,86 @@ func TestWalk(t *testing.T) {
 	if !reflect.DeepEqual(files, expect) {
 		t.Errorf("something went wrong\ngot:    %v\nexpect: %v", files, expect)
 	}
+}
+
+func TestHTTPFile_Readdir(t *testing.T) {
+	Register(mustZipTree("../testdata/readdir"))
+	fs, err := New()
+	if err != nil {
+		t.Errorf("New() = %v", err)
+		return
+	}
+	t.Run("Readdir(-1)", func(t *testing.T) {
+		dir, err := fs.Open("/")
+		if err != nil {
+			t.Errorf("fs.Open(/) = %v", err)
+			return
+		}
+		fis, err := dir.Readdir(-1)
+		if err != nil {
+			t.Errorf("dir.Readdir(-1) = %v", err)
+			return
+		}
+		if len(fis) != 3 {
+			t.Errorf("got: %d, expect: 3", len(fis))
+		}
+	})
+	t.Run("Readdir(>0)", func(t *testing.T) {
+		dir, err := fs.Open("/")
+		if err != nil {
+			t.Errorf("fs.Open(/) = %v", err)
+			return
+		}
+		fis, err := dir.Readdir(1)
+		if err != nil {
+			t.Errorf("dir.Readdir(1) = %v", err)
+			return
+		}
+		if len(fis) != 1 {
+			t.Errorf("got: %d, expect: 1", len(fis))
+		}
+		if fis[0].Name() != "aa" {
+			t.Errorf("got: %s, expect: aa", fis[0].Name())
+		}
+		fis, err = dir.Readdir(1)
+		if err != nil {
+			t.Errorf("dir.Readdir(1) = %v", err)
+			return
+		}
+		if len(fis) != 1 {
+			t.Errorf("got: %d, expect: 1", len(fis))
+		}
+		if fis[0].Name() != "bb" {
+			t.Errorf("got: %s, expect: bb", fis[0].Name())
+		}
+		fis, err = dir.Readdir(-1) // take rest entries
+		if err != nil {
+			t.Errorf("dir.Readdir(1) = %v", err)
+			return
+		}
+		if len(fis) != 1 {
+			t.Errorf("got: %d, expect: 1", len(fis))
+		}
+		if fis[0].Name() != "cc" {
+			t.Errorf("got: %s, expect: cc", fis[0].Name())
+		}
+		fis, err = dir.Readdir(-1)
+		if err != nil {
+			t.Errorf("dir.Readdir(1) = %v", err)
+			return
+		}
+		if len(fis) != 0 {
+			t.Errorf("got: %d, expect: 0", len(fis))
+		}
+		fis, err = dir.Readdir(1)
+		if err != io.EOF {
+			t.Errorf("error should be io.EOF, but: %s", err)
+			return
+		}
+		if len(fis) != 0 {
+			t.Errorf("got: %d, expect: 0", len(fis))
+		}
+	})
 }
 
 // Test that calling Open by many goroutines concurrently continues
