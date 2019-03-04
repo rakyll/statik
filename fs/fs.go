@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"sort"
 	"strings"
 	"time"
 )
@@ -88,6 +89,9 @@ func New() (http.FileSystem, error) {
 			fs.dirs[dn] = append(fs.dirs[dn], path.Base(fn))
 		}
 	}
+	for _, s := range fs.dirs {
+		sort.Strings(s)
+	}
 	return fs, nil
 }
 
@@ -139,6 +143,7 @@ type httpFile struct {
 
 	reader *bytes.Reader
 	isDir  bool
+	dirIdx int
 }
 
 // Read reads bytes into p, returns the number of read bytes.
@@ -175,12 +180,34 @@ func (f *httpFile) Readdir(count int) ([]os.FileInfo, error) {
 	if !ok {
 		return nil, fmt.Errorf("failed to draw dirInfo from *httpFile: %q", f.Name())
 	}
-	for _, fn := range f.file.fs.dirs[di.name] {
-		fis = append(fis, f.file.fs.files[path.Join(di.name, fn)].FileInfo)
+
+	fnames := f.file.fs.dirs[di.name]
+	flen := len(fnames)
+
+	start := f.dirIdx
+	if start >= flen && count > 0 {
+		return fis, io.EOF
 	}
+	var end int
+	if count < 0 {
+		end = flen
+	} else {
+		end = start + count
+	}
+	if end > flen {
+		end = flen
+	}
+	for i := start; i < end; i++ {
+		fis = append(fis, f.file.fs.files[path.Join(di.name, fnames[i])].FileInfo)
+	}
+	f.dirIdx += len(fis)
 	return fis, nil
 }
 
 func (f *httpFile) Close() error {
+	f.dirIdx = 0
+	if !f.isDir {
+		f.Seek(0, 0)
+	}
 	return nil
 }
