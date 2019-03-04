@@ -21,6 +21,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -203,6 +204,38 @@ func TestOpen(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestWalk(t *testing.T) {
+	Register(mustZipTree("../testdata/deep"))
+	fs, err := New()
+	if err != nil {
+		t.Errorf("New() = %v", err)
+		return
+	}
+	var files []string
+	err = Walk(fs, "/", func(path string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		files = append(files, path)
+		return nil
+	})
+	if err != nil {
+		t.Errorf("Walk(fs, /) = %v", err)
+		return
+	}
+	expect := []string{
+		"/",
+		"/a",
+		"/aa",
+		"/aa/bb",
+		"/aa/bb/c",
+	}
+	sort.Strings(files)
+	if !reflect.DeepEqual(files, expect) {
+		t.Errorf("something went wrong\ngot:    %v\nexpect: %v", files, expect)
 	}
 }
 

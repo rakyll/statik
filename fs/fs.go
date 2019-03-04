@@ -169,7 +169,8 @@ func (f *httpFile) Readdir(count int) ([]os.FileInfo, error) {
 	}
 	prefix := di.name // absolute path name
 	for fn, f := range f.file.fs.files {
-		rel := strings.TrimPrefix(fn, prefix+"/")
+		rel := strings.TrimPrefix(fn, prefix)
+		rel = strings.TrimPrefix(rel, "/")
 		// pick up only the entries just under the directory and
 		// do not follow grandchild.
 		if strings.HasPrefix(fn, prefix) && len(fn) > len(prefix) &&
