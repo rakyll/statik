@@ -42,6 +42,8 @@ func TestOpen(t *testing.T) {
 	pixelGifHeader := mustFileHeader("../testdata/image/pixel.gif")
 	indexHTMLHeader := mustFileHeader("../testdata/index/index.html")
 	subdirIndexHTMLHeader := mustFileHeader("../testdata/index/sub_dir/index.html")
+	deepAHTMLHeader := mustFileHeader("../testdata/deep/a")
+	deepCHTMLHeader := mustFileHeader("../testdata/deep/aa/bb/c")
 	tests := []struct {
 		description string
 		zipData     string
@@ -113,6 +115,43 @@ func TestOpen(t *testing.T) {
 			wantFiles: map[string]wantFile{
 				"/missing.txt": {
 					err: os.ErrNotExist,
+				},
+			},
+		},
+		{
+			description: "listed all sub directories in deep directory",
+			zipData:     mustZipTree("../testdata/deep"),
+			wantFiles: map[string]wantFile{
+				"/a": {
+					data:    mustReadFile("../testdata/deep/a"),
+					isDir:   false,
+					modTime: deepAHTMLHeader.ModTime(),
+					mode:    deepAHTMLHeader.Mode(),
+					name:    deepAHTMLHeader.Name,
+					size:    int64(deepAHTMLHeader.UncompressedSize64),
+				},
+				"/aa/bb/c": {
+					data:    mustReadFile("../testdata/deep/aa/bb/c"),
+					isDir:   false,
+					modTime: deepCHTMLHeader.ModTime(),
+					mode:    deepCHTMLHeader.Mode(),
+					name:    deepCHTMLHeader.Name,
+					size:    int64(deepCHTMLHeader.UncompressedSize64),
+				},
+				"/": {
+					isDir: true,
+					mode:  os.ModeDir | 0755,
+					name:  "/",
+				},
+				"/aa": {
+					isDir: true,
+					mode:  os.ModeDir | 0755,
+					name:  "/aa",
+				},
+				"/aa/bb": {
+					isDir: true,
+					mode:  os.ModeDir | 0755,
+					name:  "/aa/bb",
 				},
 			},
 		},
