@@ -15,18 +15,17 @@ package fs
 
 import (
 	"archive/zip"
-	"bytes"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"reflect"
 	"sort"
-	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/rakyll/statik/ziptree"
 )
 
 type wantFile struct {
@@ -373,46 +372,11 @@ func BenchmarkOpen(b *testing.B) {
 // mustZipTree walks on the source path and returns the zipped file contents
 // as a string. Panics on any errors.
 func mustZipTree(srcPath string) string {
-	var out bytes.Buffer
-	w := zip.NewWriter(&out)
-	if err := filepath.Walk(srcPath, func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		// Ignore directories and hidden files.
-		// No entry is needed for directories in a zip file.
-		// Each file is represented with a path, no directory
-		// entities are required to build the hierarchy.
-		if fi.IsDir() || strings.HasPrefix(fi.Name(), ".") {
-			return nil
-		}
-		relPath, err := filepath.Rel(srcPath, path)
-		if err != nil {
-			return err
-		}
-		b, err := ioutil.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		fHeader, err := zip.FileInfoHeader(fi)
-		if err != nil {
-			return err
-		}
-		fHeader.Name = filepath.ToSlash(relPath)
-		fHeader.Method = zip.Deflate
-		f, err := w.CreateHeader(fHeader)
-		if err != nil {
-			return err
-		}
-		_, err = f.Write(b)
-		return err
-	}); err != nil {
+	bs, err := ziptree.Zip(srcPath)
+	if err != nil {
 		panic(err)
 	}
-	if err := w.Close(); err != nil {
-		panic(err)
-	}
-	return string(out.Bytes())
+	return string(bs)
 }
 
 // mustReadFile returns the file contents. Panics on any errors.
