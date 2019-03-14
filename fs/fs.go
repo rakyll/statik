@@ -181,9 +181,16 @@ func (f *httpFile) Readdir(count int) ([]os.FileInfo, error) {
 		return nil, fmt.Errorf("failed to read directory: %q", f.Name())
 	}
 
+	// If count is positive, the specified number of files will be returned,
+	// and if negative, all remaining files will be returned.
+	// The reading position of which file is returned is held in dirIndex.
 	fnames := f.file.fs.dirs[di.name]
 	flen := len(fnames)
 
+	// If dirIdx reaches the end and the count is a positive value,
+	// an io.EOF error is returned.
+	// In other cases, no error will be returned even if, for example,
+	// you specified more counts than the number of remaining files.
 	start := f.dirIdx
 	if start >= flen && count > 0 {
 		return fis, io.EOF
