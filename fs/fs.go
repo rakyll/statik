@@ -205,9 +205,5 @@ func (f *httpFile) Readdir(count int) ([]os.FileInfo, error) {
 }
 
 func (f *httpFile) Close() error {
-	f.dirIdx = 0
-	if !f.isDir {
-		f.Seek(0, 0)
-	}
 	return nil
 }
