@@ -178,7 +178,7 @@ func (f *httpFile) Readdir(count int) ([]os.FileInfo, error) {
 	}
 	di, ok := f.FileInfo.(dirInfo)
 	if !ok {
-		return nil, fmt.Errorf("failed to draw dirInfo from *httpFile: %q", f.Name())
+		return nil, fmt.Errorf("failed to read directory: %q", f.Name())
 	}
 
 	fnames := f.file.fs.dirs[di.name]

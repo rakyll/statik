@@ -227,7 +227,7 @@ func TestWalk(t *testing.T) {
 		t.Errorf("Walk(fs, /) = %v", err)
 		return
 	}
-	expect := []string{
+	wantDirs := []string{
 		"/",
 		"/a",
 		"/aa",
@@ -235,8 +235,8 @@ func TestWalk(t *testing.T) {
 		"/aa/bb/c",
 	}
 	sort.Strings(files)
-	if !reflect.DeepEqual(files, expect) {
-		t.Errorf("something went wrong\ngot:    %v\nexpect: %v", files, expect)
+	if !reflect.DeepEqual(files, wantDirs) {
+		t.Errorf("got:    %v\nexpect: %v", files, wantDirs)
 	}
 }
 
