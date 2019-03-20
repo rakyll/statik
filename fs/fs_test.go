@@ -16,10 +16,13 @@ package fs
 import (
 	"archive/zip"
 	"bytes"
+	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -41,6 +44,8 @@ func TestOpen(t *testing.T) {
 	pixelGifHeader := mustFileHeader("../testdata/image/pixel.gif")
 	indexHTMLHeader := mustFileHeader("../testdata/index/index.html")
 	subdirIndexHTMLHeader := mustFileHeader("../testdata/index/sub_dir/index.html")
+	deepAHTMLHeader := mustFileHeader("../testdata/deep/a")
+	deepCHTMLHeader := mustFileHeader("../testdata/deep/aa/bb/c")
 	tests := []struct {
 		description string
 		zipData     string
@@ -115,6 +120,43 @@ func TestOpen(t *testing.T) {
 				},
 			},
 		},
+		{
+			description: "listed all sub directories in deep directory",
+			zipData:     mustZipTree("../testdata/deep"),
+			wantFiles: map[string]wantFile{
+				"/a": {
+					data:    mustReadFile("../testdata/deep/a"),
+					isDir:   false,
+					modTime: deepAHTMLHeader.ModTime(),
+					mode:    deepAHTMLHeader.Mode(),
+					name:    deepAHTMLHeader.Name,
+					size:    int64(deepAHTMLHeader.UncompressedSize64),
+				},
+				"/aa/bb/c": {
+					data:    mustReadFile("../testdata/deep/aa/bb/c"),
+					isDir:   false,
+					modTime: deepCHTMLHeader.ModTime(),
+					mode:    deepCHTMLHeader.Mode(),
+					name:    deepCHTMLHeader.Name,
+					size:    int64(deepCHTMLHeader.UncompressedSize64),
+				},
+				"/": {
+					isDir: true,
+					mode:  os.ModeDir | 0755,
+					name:  "/",
+				},
+				"/aa": {
+					isDir: true,
+					mode:  os.ModeDir | 0755,
+					name:  "/aa",
+				},
+				"/aa/bb": {
+					isDir: true,
+					mode:  os.ModeDir | 0755,
+					name:  "/aa/bb",
+				},
+			},
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
@@ -155,7 +197,7 @@ func TestOpen(t *testing.T) {
 				if got, want := stat.Mode(), wantFile.mode; got != want {
 					t.Errorf("Mode(%v) = %v; want %v", name, got, want)
 				}
-				if got, want := stat.Name(), wantFile.name; got != want {
+				if got, want := stat.Name(), path.Base(wantFile.name); got != want {
 					t.Errorf("Name(%v) = %v; want %v", name, got, want)
 				}
 				if got, want := stat.Size(), wantFile.size; got != want {
@@ -164,6 +206,118 @@ func TestOpen(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestWalk(t *testing.T) {
+	Register(mustZipTree("../testdata/deep"))
+	fs, err := New()
+	if err != nil {
+		t.Errorf("New() = %v", err)
+		return
+	}
+	var files []string
+	err = Walk(fs, "/", func(path string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		files = append(files, path)
+		return nil
+	})
+	if err != nil {
+		t.Errorf("Walk(fs, /) = %v", err)
+		return
+	}
+	wantDirs := []string{
+		"/",
+		"/a",
+		"/aa",
+		"/aa/bb",
+		"/aa/bb/c",
+	}
+	sort.Strings(files)
+	if !reflect.DeepEqual(files, wantDirs) {
+		t.Errorf("got:    %v\nexpect: %v", files, wantDirs)
+	}
+}
+
+func TestHTTPFile_Readdir(t *testing.T) {
+	Register(mustZipTree("../testdata/readdir"))
+	fs, err := New()
+	if err != nil {
+		t.Errorf("New() = %v", err)
+		return
+	}
+	t.Run("Readdir(-1)", func(t *testing.T) {
+		dir, err := fs.Open("/")
+		if err != nil {
+			t.Errorf("fs.Open(/) = %v", err)
+			return
+		}
+		fis, err := dir.Readdir(-1)
+		if err != nil {
+			t.Errorf("dir.Readdir(-1) = %v", err)
+			return
+		}
+		if len(fis) != 3 {
+			t.Errorf("got: %d, expect: 3", len(fis))
+		}
+	})
+	t.Run("Readdir(>0)", func(t *testing.T) {
+		dir, err := fs.Open("/")
+		if err != nil {
+			t.Errorf("fs.Open(/) = %v", err)
+			return
+		}
+		fis, err := dir.Readdir(1)
+		if err != nil {
+			t.Errorf("dir.Readdir(1) = %v", err)
+			return
+		}
+		if len(fis) != 1 {
+			t.Errorf("got: %d, expect: 1", len(fis))
+		}
+		if fis[0].Name() != "aa" {
+			t.Errorf("got: %s, expect: aa", fis[0].Name())
+		}
+		fis, err = dir.Readdir(1)
+		if err != nil {
+			t.Errorf("dir.Readdir(1) = %v", err)
+			return
+		}
+		if len(fis) != 1 {
+			t.Errorf("got: %d, expect: 1", len(fis))
+		}
+		if fis[0].Name() != "bb" {
+			t.Errorf("got: %s, expect: bb", fis[0].Name())
+		}
+		fis, err = dir.Readdir(-1) // take rest entries
+		if err != nil {
+			t.Errorf("dir.Readdir(1) = %v", err)
+			return
+		}
+		if len(fis) != 1 {
+			t.Errorf("got: %d, expect: 1", len(fis))
+		}
+		if fis[0].Name() != "cc" {
+			t.Errorf("got: %s, expect: cc", fis[0].Name())
+		}
+		fis, err = dir.Readdir(-1)
+		if err != nil {
+			t.Errorf("dir.Readdir(1) = %v", err)
+			return
+		}
+		if len(fis) != 0 {
+			t.Errorf("got: %d, expect: 0", len(fis))
+		}
+		fis, err = dir.Readdir(1)
+		if err != io.EOF {
+			t.Errorf("error should be io.EOF, but: %s", err)
+			return
+		}
+		if len(fis) != 0 {
+			t.Errorf("got: %d, expect: 0", len(fis))
+		}
+	})
 }
 
 // Test that calling Open by many goroutines concurrently continues
