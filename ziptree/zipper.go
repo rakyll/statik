@@ -1,3 +1,4 @@
+// Package ziptree contains code to zip a directory tree and write it out.
 package ziptree
 
 import (
@@ -10,6 +11,7 @@ import (
 	"time"
 )
 
+// Option for zipping
 type Option func(*config)
 
 type config struct {
@@ -21,18 +23,21 @@ func newConfig() *config {
 	return &config{Compress: true}
 }
 
+// Compress is an Option to compress a zip or not
 func Compress(f bool) Option {
 	return func(c *config) {
 		c.Compress = f
 	}
 }
 
+// FixMtime is an Option to fix mtimes of the file in the zip
 func FixMtime(t time.Time) Option {
 	return func(c *config) {
 		c.Mtime = t
 	}
 }
 
+// Zip a directory tree
 func Zip(srcPath string, opts ...Option) ([]byte, error) {
 	c := newConfig()
 	for _, opt := range opts {
