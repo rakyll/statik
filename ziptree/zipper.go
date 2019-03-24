@@ -55,6 +55,9 @@ func Zip(srcPath string, opts ...Option) ([]byte, error) {
 		// Each file is represented with a path, no directory
 		// entities are required to build the hierarchy.
 		if fi.IsDir() || strings.HasPrefix(fi.Name(), ".") {
+			if fi.IsDir() && strings.HasPrefix(fi.Name(), ".") {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 		relPath, err := filepath.Rel(srcPath, path)
