@@ -45,6 +45,7 @@ var (
 	flagTags       = flag.String("tags", "", "Write build constraint tags")
 	flagPkg        = flag.String("p", "statik", "Name of the generated package")
 	flagPkgCmt     = flag.String("c", "Package statik contains static assets.", "The package comment. An empty value disables this comment.\n")
+	flagDotfiles   = flag.Bool("dotfiles", false, "Collect dotfiles inside source or not.")
 )
 
 // mtimeDate holds the arbitrary mtime that we assign to files when
@@ -125,6 +126,9 @@ func generateSource(srcPath string) (file *os.File, err error) {
 	}
 	if *flagNoMtime {
 		opts = append(opts, ziptree.FixMtime(mtimeDate))
+	}
+	if *flagDotfiles {
+		opts = append(opts, ziptree.IncludeDotFiles(true))
 	}
 	bs, err := ziptree.Zip(srcPath, opts...)
 	if err != nil {
