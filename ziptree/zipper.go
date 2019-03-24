@@ -15,8 +15,9 @@ import (
 type Option func(*config)
 
 type config struct {
-	Compress bool
-	Mtime    time.Time
+	Compress        bool
+	Mtime           time.Time
+	IncludeDotFiles bool
 }
 
 func newConfig() *config {
@@ -37,6 +38,13 @@ func FixMtime(t time.Time) Option {
 	}
 }
 
+// Compress is an Option to include dotfiles or not
+func IncludeDotFiles(f bool) Option {
+	return func(c *config) {
+		c.IncludeDotFiles = f
+	}
+}
+
 // Zip a directory tree
 func Zip(srcPath string, opts ...Option) ([]byte, error) {
 	c := newConfig()
@@ -54,8 +62,8 @@ func Zip(srcPath string, opts ...Option) ([]byte, error) {
 		// No entry is needed for directories in a zip file.
 		// Each file is represented with a path, no directory
 		// entities are required to build the hierarchy.
-		if fi.IsDir() || strings.HasPrefix(fi.Name(), ".") {
-			if fi.IsDir() && strings.HasPrefix(fi.Name(), ".") {
+		if fi.IsDir() || (!c.IncludeDotFiles && strings.HasPrefix(fi.Name(), ".")) {
+			if fi.IsDir() && strings.HasPrefix(fi.Name(), ".") && !c.IncludeDotFiles {
 				return filepath.SkipDir
 			}
 			return nil

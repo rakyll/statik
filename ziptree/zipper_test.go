@@ -77,6 +77,12 @@ func TestZip_CollectFile(t *testing.T) {
 			opts:        nil,
 			wantFiles:   []string{"general-file"},
 		},
+		{
+			description: "include dot files",
+			dir:         "../testdata/ziptree-skipdir",
+			opts:        []ziptree.Option{ziptree.IncludeDotFiles(true)},
+			wantFiles:   []string{".dot/inside-dot", ".dotfile", "general-file"},
+		},
 	}
 
 	for _, tc := range tests {
