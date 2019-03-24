@@ -1,9 +1,11 @@
 package ziptree_test
 
 import (
+	"archive/zip"
 	"bytes"
 	"os"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 
@@ -59,5 +61,40 @@ func TestFprintZipData(t *testing.T) {
 	want := `PK\x03\x04\x14\x00\x08\x00\x08\x00\x00\x00!(\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x05\x00	\x00helloUT\x05\x00\x01\x80Cm8\x01\x00\x00\xff\xffPK\x07\x08\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00PK\x01\x02\x14\x03\x14\x00\x08\x00\x08\x00\x00\x00!(\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x05\x00	\x00\x00\x00\x00\x00\x00\x00\x00\x00\xa4\x81\x00\x00\x00\x00helloUT\x05\x00\x01\x80Cm8PK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00<\x00\x00\x00A\x00\x00\x00\x00\x00`
 	if out != want {
 		t.Errorf("got: %s\nexpect: %s", out, want)
+	}
+}
+
+func TestZip_CollectFile(t *testing.T) {
+	tests := []struct {
+		description string
+		dir         string
+		opts        []ziptree.Option
+		wantFiles   []string
+	}{
+		{
+			description: "dot files and files inside dot dirs are not collected",
+			dir:         "../testdata/ziptree-skipdir",
+			opts:        nil,
+			wantFiles:   []string{"general-file"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			out, err := ziptree.Zip(tc.dir, tc.opts...)
+			if err != nil {
+				t.Errorf("error should be nil, but: %s", err)
+			}
+			zipReader, err := zip.NewReader(bytes.NewReader(out), int64(len(out)))
+			l := len(zipReader.File)
+			files := make([]string, l)
+			for i := 0; i < l; i++ {
+				files[i] = zipReader.File[i].Name
+			}
+			sort.Strings(files)
+			if !reflect.DeepEqual(tc.wantFiles, files) {
+				t.Errorf("got: %v\nwant: %v", files, tc.wantFiles)
+			}
+		})
 	}
 }
