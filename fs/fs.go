@@ -182,7 +182,7 @@ func (f *httpFile) Readdir(count int) ([]os.FileInfo, error) {
 	}
 
 	// If count is positive, the specified number of files will be returned,
-	// and if negative, all remaining files will be returned.
+	// and if non-positive, all remaining files will be returned.
 	// The reading position of which file is returned is held in dirIndex.
 	fnames := f.file.fs.dirs[di.name]
 	flen := len(fnames)
@@ -196,7 +196,7 @@ func (f *httpFile) Readdir(count int) ([]os.FileInfo, error) {
 		return fis, io.EOF
 	}
 	var end int
-	if count < 0 {
+	if count <= 0 {
 		end = flen
 	} else {
 		end = start + count

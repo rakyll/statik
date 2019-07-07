@@ -262,6 +262,21 @@ func TestHTTPFile_Readdir(t *testing.T) {
 			t.Errorf("got: %d, expect: 3", len(fis))
 		}
 	})
+	t.Run("Readdir(0)", func(t *testing.T) {
+		dir, err := fs.Open("/")
+		if err != nil {
+			t.Errorf("fs.Open(/) = %v", err)
+			return
+		}
+		fis, err := dir.Readdir(0)
+		if err != nil {
+			t.Errorf("dir.Readdir(0) = %v", err)
+			return
+		}
+		if len(fis) != 3 {
+			t.Errorf("got: %d, expect: 3", len(fis))
+		}
+	})
 	t.Run("Readdir(>0)", func(t *testing.T) {
 		dir, err := fs.Open("/")
 		if err != nil {
@@ -412,7 +427,7 @@ func mustZipTree(srcPath string) string {
 	if err := w.Close(); err != nil {
 		panic(err)
 	}
-	return string(out.Bytes())
+	return out.String()
 }
 
 // mustReadFile returns the file contents. Panics on any errors.
