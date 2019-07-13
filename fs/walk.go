@@ -17,7 +17,6 @@ package fs
 import (
 	"bytes"
 	"io"
-	"net/http"
 	"path"
 	"path/filepath"
 )
@@ -27,7 +26,7 @@ import (
 // All errors that arise visiting files and directories are filtered by walkFn.
 //
 // As with filepath.Walk, if the walkFn returns filepath.SkipDir, then the directory is skipped.
-func Walk(hfs http.FileSystem, root string, walkFn filepath.WalkFunc) error {
+func Walk(hfs *StatikFS, root string, walkFn filepath.WalkFunc) error {
 	dh, err := hfs.Open(root)
 	if err != nil {
 		return err
@@ -67,7 +66,7 @@ func Walk(hfs http.FileSystem, root string, walkFn filepath.WalkFunc) error {
 
 // ReadFile reads the contents of the file of hfs specified by name.
 // Just as ioutil.ReadFile does.
-func ReadFile(hfs http.FileSystem, name string) ([]byte, error) {
+func ReadFile(hfs *StatikFS, name string) ([]byte, error) {
 	fh, err := hfs.Open(name)
 	if err != nil {
 		return nil, err
