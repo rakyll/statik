@@ -8,6 +8,7 @@ import (
 
 	_ "github.com/rakyll/statik/example/statik"
 	"github.com/rakyll/statik/fs"
+	"github.com/rakyll/statik/fs/httpfs"
 )
 
 // Before buildling, run go generate.
@@ -18,6 +19,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(statikFS)))
+	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(httpfs.System(statikFS))))
 	http.ListenAndServe(":8080", nil)
 }

@@ -23,6 +23,7 @@ In your program, all your need to do is to import the generated package, initial
 ~~~ go
 import (
   "github.com/rakyll/statik/fs"
+  "github.com/rakyll/statik/fs/httpfs"
 
   _ "./statik" // TODO: Replace with the absolute import path
 )
@@ -34,7 +35,7 @@ import (
     log.Fatal(err)
   }
 
-  http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(statikFS)))
+  http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(httpfs.System(statikFS))))
   http.ListenAndServe(":8080", nil)
 ~~~
 
