@@ -2,6 +2,7 @@ package httpfs
 
 import (
 	"net/http"
+
 	"github.com/rakyll/statik/fs"
 )
 
