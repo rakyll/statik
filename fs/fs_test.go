@@ -16,6 +16,7 @@ package fs
 import (
 	"archive/zip"
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -37,6 +38,70 @@ type wantFile struct {
 	name    string
 	size    int64
 	err     error
+}
+
+func TestRegisterWithName(t *testing.T) {
+	tests := []struct {
+		description string
+		assetName   string
+		zipData     string
+		condition   func() error
+	}{
+		{
+			description: "RegisterWithName() should set zipData with assetName to be key",
+			assetName:   "file",
+			zipData:     "file test",
+			condition: func() error {
+				data, ok := zipData["file"]
+				if !ok {
+					return errors.New("fail to register zipData")
+				}
+				if data != "file test" {
+					return errors.New("fail to register zipData[\"file\"]")
+				}
+				return nil
+			},
+		},
+		{
+			description: "zipData[\"default\"] should be able to open by Open()",
+			assetName:   "default",
+			zipData:     mustZipTree("../testdata/file"),
+			condition: func() error {
+				fs, err := New()
+				if err != nil {
+					return err
+				}
+				if _, err := fs.Open("/file.txt"); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		{
+			description: "zipData[\"foo\"] should be able to open by OpenWithName(\"foo\")",
+			assetName:   "foo",
+			zipData:     mustZipTree("../testdata/file"),
+			condition: func() error {
+				fs, err := NewWithName("foo")
+				if err != nil {
+					return err
+				}
+				if _, err := fs.Open("/file.txt"); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			RegisterWithName(tc.assetName, tc.zipData)
+			if err := tc.condition(); err != nil {
+				t.Error(err)
+			}
+		})
+		delete(zipData, tc.assetName)
+	}
 }
 
 func TestOpen(t *testing.T) {
