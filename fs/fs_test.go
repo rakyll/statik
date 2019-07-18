@@ -157,6 +157,20 @@ func TestOpen(t *testing.T) {
 				},
 			},
 		},
+		{
+			description: "Paths containing dots should be properly sanitized",
+			zipData:     mustZipTree("../testdata"),
+			wantFiles: map[string]wantFile{
+				"/../file/../file/../file/.//file.txt": {
+					data:    mustReadFile("../testdata/file/file.txt"),
+					isDir:   false,
+					modTime: fileTxtHeader.ModTime(),
+					mode:    fileTxtHeader.Mode(),
+					name:    fileTxtHeader.Name,
+					size:    int64(fileTxtHeader.UncompressedSize64),
+				},
+			},
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
