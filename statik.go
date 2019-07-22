@@ -28,6 +28,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"unicode"
 )
 
 const (
@@ -195,7 +196,7 @@ func generateSource(srcPath string) (file *os.File, err error) {
 	// assetNameIdentify is "AbcDeF_G"
 	// when assetName is "abc de f-g"
 	assetName := *flagAstName
-	assetNameIdentify := strings.TrimSpace(strings.Title(strings.Replace(assetName, "-", "_", -1)))
+	assetNameIdentify := toSymbolSafe(assetName)
 
 	// then embed it as a quoted string
 	var qb bytes.Buffer
@@ -261,4 +262,32 @@ func commentLines(lines string) string {
 func exitWithError(err error) {
 	fmt.Println(err)
 	os.Exit(1)
+}
+
+// convert src to symbol safe string with upper camel case
+func toSymbolSafe(str string) string {
+	isBeforeRuneNoGeneralCase := false
+	replace := func(r rune) rune {
+		if unicode.IsLetter(r) {
+			if isBeforeRuneNoGeneralCase {
+				isBeforeRuneNoGeneralCase = true
+				return r
+			} else {
+				isBeforeRuneNoGeneralCase = true
+				return unicode.ToTitle(r)
+			}
+		} else if unicode.IsDigit(r) {
+			if isBeforeRuneNoGeneralCase {
+				isBeforeRuneNoGeneralCase = true
+				return r
+			} else {
+				isBeforeRuneNoGeneralCase = false
+				return -1
+			}
+		} else {
+			isBeforeRuneNoGeneralCase = false
+			return -1
+		}
+	}
+	return strings.TrimSpace(strings.Map(replace, str))
 }
