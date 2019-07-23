@@ -261,6 +261,21 @@ func TestHTTPFile_Readdir(t *testing.T) {
 			t.Errorf("got: %d, expect: 3", len(fis))
 		}
 	})
+	t.Run("Readdir(0)", func(t *testing.T) {
+		dir, err := fs.Open("/")
+		if err != nil {
+			t.Errorf("fs.Open(/) = %v", err)
+			return
+		}
+		fis, err := dir.Readdir(0)
+		if err != nil {
+			t.Errorf("dir.Readdir(0) = %v", err)
+			return
+		}
+		if len(fis) != 3 {
+			t.Errorf("got: %d, expect: 3", len(fis))
+		}
+	})
 	t.Run("Readdir(>0)", func(t *testing.T) {
 		dir, err := fs.Open("/")
 		if err != nil {
