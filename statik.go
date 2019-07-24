@@ -78,10 +78,8 @@ func main() {
 func rename(src, dest string) error {
 	// If the dest file already exists, only proceed if forced.
 	// Rename can succeed on OS X when dest already exists so do this first.
-	if _, err := os.Stat(dest); !os.IsNotExist(err) {
-		if !*flagForce {
-			return fmt.Errorf("file %q already exists; use -f to overwrite", dest)
-		}
+	if _, err := os.Stat(dest); !os.IsNotExist(err) && !*flagForce {
+		return fmt.Errorf("file %q already exists; use -f to overwrite", dest)
 	}
 
 	// Try to rename generated source.
