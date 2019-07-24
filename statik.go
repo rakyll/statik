@@ -76,6 +76,14 @@ func main() {
 // rename tries to os.Rename, but fall backs to copying from src
 // to dest and unlink the source if os.Rename fails.
 func rename(src, dest string) error {
+	// If the dest file already exists, only proceed if forced.
+	// Rename can succeed on OS X when dest already exists so do this first.
+	if _, err := os.Stat(dest); !os.IsNotExist(err) {
+		if !*flagForce {
+			return fmt.Errorf("file %q already exists; use -f to overwrite", dest)
+		}
+	}
+
 	// Try to rename generated source.
 	if err := os.Rename(src, dest); err == nil {
 		return nil
@@ -91,14 +99,8 @@ func rename(src, dest string) error {
 		os.Remove(src) // ignore the error, source is in tmp.
 	}()
 
-	if _, err = os.Stat(dest); !os.IsNotExist(err) {
-		if *flagForce {
-			if err = os.Remove(dest); err != nil {
-				return fmt.Errorf("file %q could not be deleted", dest)
-			}
-		} else {
-			return fmt.Errorf("file %q already exists; use -f to overwrite", dest)
-		}
+	if err := os.Remove(dest); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("file %q could not be deleted", dest)
 	}
 
 	wc, err := os.Create(dest)
