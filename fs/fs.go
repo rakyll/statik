@@ -25,7 +25,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -123,7 +122,7 @@ func unzip(zf *zip.File) ([]byte, error) {
 // If a directory is requested, Open returns the file named "index.html"
 // in the requested directory, if that file exists.
 func (fs *statikFS) Open(name string) (http.File, error) {
-	name = filepath.Clean(name)
+	name = strings.Replace(name, "//", "/", -1)
 	if f, ok := fs.files[name]; ok {
 		return newHTTPFile(f), nil
 	}
