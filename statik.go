@@ -28,6 +28,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	spath "path"
 )
 
 const (
@@ -45,6 +46,7 @@ var (
 	flagTags       = flag.String("tags", "", "Write build constraint tags")
 	flagPkg        = flag.String("p", "statik", "Name of the generated package")
 	flagPkgCmt     = flag.String("c", "Package statik contains static assets.", "The package comment. An empty value disables this comment.\n")
+	flagExtensions = flag.String("exts", "*.*", "The file extension to be included.\n")
 )
 
 // mtimeDate holds the arbitrary mtime that we assign to files when
@@ -56,7 +58,7 @@ func main() {
 
 	namePackage = *flagPkg
 
-	file, err := generateSource(*flagSrc)
+	file, err := generateSource(*flagSrc, *flagExtensions)
 	if err != nil {
 		exitWithError(err)
 	}
@@ -114,11 +116,40 @@ func rename(src, dest string) error {
 	return err
 }
 
+// Check if an array contains an item
+func contains(slice []string, item string) bool {
+	set := make(map[string]struct{}, len(slice))
+	for _, s := range slice {
+		set[s] = struct{}{}
+	}
+
+	_, ok := set[item]
+	return ok
+}
+
+// Match a path with some of extensions
+func match(exts []string, path string) (bool, error) {
+	var err error
+	for _, ext := range exts {
+		matches, e := filepath.Glob(spath.Join(filepath.Dir(path), ext))
+
+		if e != nil {
+			err = e
+		}
+
+		if matches != nil && len(matches) != 0 && contains(matches, path) {
+			return true, nil
+		}
+	}
+
+	return false, err
+}
+
 // Walks on the source path and generates source code
 // that contains source directory's contents as zip contents.
 // Generates source registers generated zip contents data to
 // be read by the statik/fs HTTP file system.
-func generateSource(srcPath string) (file *os.File, err error) {
+func generateSource(srcPath string, extensions string) (file *os.File, err error) {
 	var (
 		buffer    bytes.Buffer
 		zipWriter io.Writer
@@ -153,6 +184,15 @@ func generateSource(srcPath string) (file *os.File, err error) {
 		if err != nil {
 			return err
 		}
+
+		exts := strings.Split(extensions, ",")
+
+		if b, e := match(exts, path); e != nil {
+			return err
+		} else if !b {
+			return nil
+		}
+
 		fHeader, err := zip.FileInfoHeader(fi)
 		if err != nil {
 			return err

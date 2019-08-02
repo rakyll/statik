@@ -1,4 +1,4 @@
-//go:generate statik -src=./public
+//go:generate statik -src=./public -exts=*.jpg,*.txt,*.html,*.css,*.js
 
 package main
 
