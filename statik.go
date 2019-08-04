@@ -46,7 +46,7 @@ var (
 	flagTags       = flag.String("tags", "", "Write build constraint tags")
 	flagPkg        = flag.String("p", "statik", "Name of the generated package")
 	flagPkgCmt     = flag.String("c", "Package statik contains static assets.", "The package comment. An empty value disables this comment.\n")
-	flagExtensions = flag.String("exts", "*.*", "The file extension to be included.\n")
+	flagIncludes   = flag.String("only-include", "*.*", "The patterns of files to be included (by comma separated).\n")
 )
 
 // mtimeDate holds the arbitrary mtime that we assign to files when
@@ -58,7 +58,7 @@ func main() {
 
 	namePackage = *flagPkg
 
-	file, err := generateSource(*flagSrc, *flagExtensions)
+	file, err := generateSource(*flagSrc, *flagIncludes)
 	if err != nil {
 		exitWithError(err)
 	}
@@ -127,11 +127,11 @@ func contains(slice []string, item string) bool {
 	return ok
 }
 
-// Match a path with some of extensions
-func match(exts []string, path string) (bool, error) {
+// Match a path with some of inclusions
+func match(incs []string, path string) (bool, error) {
 	var err error
-	for _, ext := range exts {
-		matches, e := filepath.Glob(spath.Join(filepath.Dir(path), ext))
+	for _, inc := range incs {
+		matches, e := filepath.Glob(spath.Join(filepath.Dir(path), inc))
 
 		if e != nil {
 			err = e
@@ -149,7 +149,7 @@ func match(exts []string, path string) (bool, error) {
 // that contains source directory's contents as zip contents.
 // Generates source registers generated zip contents data to
 // be read by the statik/fs HTTP file system.
-func generateSource(srcPath string, extensions string) (file *os.File, err error) {
+func generateSource(srcPath string, includes string) (file *os.File, err error) {
 	var (
 		buffer    bytes.Buffer
 		zipWriter io.Writer
@@ -185,9 +185,9 @@ func generateSource(srcPath string, extensions string) (file *os.File, err error
 			return err
 		}
 
-		exts := strings.Split(extensions, ",")
+		incs := strings.Split(includes, ",")
 
-		if b, e := match(exts, path); e != nil {
+		if b, e := match(incs, path); e != nil {
 			return err
 		} else if !b {
 			return nil
