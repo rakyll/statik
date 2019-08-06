@@ -58,7 +58,7 @@ func TestOpen(t *testing.T) {
 				"/file.txt": {
 					data:    mustReadFile("../testdata/file/file.txt"),
 					isDir:   false,
-					modTime: fileTxtHeader.ModTime(),
+					modTime: fileTxtHeader.Modified.UTC(),
 					mode:    fileTxtHeader.Mode(),
 					name:    fileTxtHeader.Name,
 					size:    int64(fileTxtHeader.UncompressedSize64),
@@ -72,7 +72,7 @@ func TestOpen(t *testing.T) {
 				"/pixel.gif": {
 					data:    mustReadFile("../testdata/image/pixel.gif"),
 					isDir:   false,
-					modTime: pixelGifHeader.ModTime(),
+					modTime: pixelGifHeader.Modified.UTC(),
 					mode:    pixelGifHeader.Mode(),
 					name:    pixelGifHeader.Name,
 					size:    int64(pixelGifHeader.UncompressedSize64),
@@ -86,7 +86,7 @@ func TestOpen(t *testing.T) {
 				"/index.html": {
 					data:    mustReadFile("../testdata/index/index.html"),
 					isDir:   false,
-					modTime: indexHTMLHeader.ModTime(),
+					modTime: indexHTMLHeader.Modified.UTC(),
 					mode:    indexHTMLHeader.Mode(),
 					name:    indexHTMLHeader.Name,
 					size:    int64(indexHTMLHeader.UncompressedSize64),
@@ -94,7 +94,7 @@ func TestOpen(t *testing.T) {
 				"/sub_dir/index.html": {
 					data:    mustReadFile("../testdata/index/sub_dir/index.html"),
 					isDir:   false,
-					modTime: subdirIndexHTMLHeader.ModTime(),
+					modTime: subdirIndexHTMLHeader.Modified.UTC(),
 					mode:    subdirIndexHTMLHeader.Mode(),
 					name:    subdirIndexHTMLHeader.Name,
 					size:    int64(subdirIndexHTMLHeader.UncompressedSize64),
@@ -127,7 +127,7 @@ func TestOpen(t *testing.T) {
 				"/a": {
 					data:    mustReadFile("../testdata/deep/a"),
 					isDir:   false,
-					modTime: deepAHTMLHeader.ModTime(),
+					modTime: deepAHTMLHeader.Modified.UTC(),
 					mode:    deepAHTMLHeader.Mode(),
 					name:    deepAHTMLHeader.Name,
 					size:    int64(deepAHTMLHeader.UncompressedSize64),
@@ -135,7 +135,7 @@ func TestOpen(t *testing.T) {
 				"/aa/bb/c": {
 					data:    mustReadFile("../testdata/deep/aa/bb/c"),
 					isDir:   false,
-					modTime: deepCHTMLHeader.ModTime(),
+					modTime: deepCHTMLHeader.Modified.UTC(),
 					mode:    deepCHTMLHeader.Mode(),
 					name:    deepCHTMLHeader.Name,
 					size:    int64(deepCHTMLHeader.UncompressedSize64),
@@ -164,7 +164,7 @@ func TestOpen(t *testing.T) {
 				"/../file/../file/../file/.//file.txt": {
 					data:    mustReadFile("../testdata/file/file.txt"),
 					isDir:   false,
-					modTime: fileTxtHeader.ModTime(),
+					modTime: fileTxtHeader.Modified.UTC(),
 					mode:    fileTxtHeader.Mode(),
 					name:    fileTxtHeader.Name,
 					size:    int64(fileTxtHeader.UncompressedSize64),
