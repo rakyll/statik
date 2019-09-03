@@ -17,7 +17,6 @@
 package main
 
 import (
-	"archive/zip"
 	"bytes"
 	"flag"
 	"fmt"
@@ -25,9 +24,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/rakyll/statik/ziptree"
 )
 
 const (
@@ -119,65 +119,16 @@ func rename(src, dest string) error {
 // Generates source registers generated zip contents data to
 // be read by the statik/fs HTTP file system.
 func generateSource(srcPath string) (file *os.File, err error) {
-	var (
-		buffer    bytes.Buffer
-		zipWriter io.Writer
-	)
-
-	zipWriter = &buffer
-	f, err := ioutil.TempFile("", namePackage)
+	var opts []ziptree.Option
+	if *flagNoCompress {
+		opts = append(opts, ziptree.Compress(false))
+	}
+	if *flagNoMtime {
+		opts = append(opts, ziptree.FixMtime(mtimeDate))
+	}
+	bs, err := ziptree.Zip(srcPath, opts...)
 	if err != nil {
-		return
-	}
-
-	zipWriter = io.MultiWriter(zipWriter, f)
-	defer f.Close()
-
-	w := zip.NewWriter(zipWriter)
-	if err = filepath.Walk(srcPath, func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		// Ignore directories and hidden files.
-		// No entry is needed for directories in a zip file.
-		// Each file is represented with a path, no directory
-		// entities are required to build the hierarchy.
-		if fi.IsDir() || strings.HasPrefix(fi.Name(), ".") {
-			return nil
-		}
-		relPath, err := filepath.Rel(srcPath, path)
-		if err != nil {
-			return err
-		}
-		b, err := ioutil.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		fHeader, err := zip.FileInfoHeader(fi)
-		if err != nil {
-			return err
-		}
-		if *flagNoMtime {
-			// Always use the same modification time so that
-			// the output is deterministic with respect to the file contents.
-			// Do NOT use fHeader.Modified as it only works on go >= 1.10
-			fHeader.SetModTime(mtimeDate)
-		}
-		fHeader.Name = filepath.ToSlash(relPath)
-		if !*flagNoCompress {
-			fHeader.Method = zip.Deflate
-		}
-		f, err := w.CreateHeader(fHeader)
-		if err != nil {
-			return err
-		}
-		_, err = f.Write(b)
-		return err
-	}); err != nil {
-		return
-	}
-	if err = w.Close(); err != nil {
-		return
+		return nil, err
 	}
 
 	var tags string
@@ -202,39 +153,20 @@ import (
 
 func init() {
 	data := "`, tags, comment, namePackage)
-	FprintZipData(&qb, buffer.Bytes())
+	ziptree.FprintZipData(&qb, bs)
 	fmt.Fprint(&qb, `"
 	fs.Register(data)
 }
 `)
-
+	f, err := ioutil.TempFile("", namePackage)
+	if err != nil {
+		return nil, err
+	}
+	f.Close()
 	if err = ioutil.WriteFile(f.Name(), qb.Bytes(), 0644); err != nil {
 		return
 	}
 	return f, nil
-}
-
-// FprintZipData converts zip binary contents to a string literal.
-func FprintZipData(dest *bytes.Buffer, zipData []byte) {
-	for _, b := range zipData {
-		if b == '\n' {
-			dest.WriteString(`\n`)
-			continue
-		}
-		if b == '\\' {
-			dest.WriteString(`\\`)
-			continue
-		}
-		if b == '"' {
-			dest.WriteString(`\"`)
-			continue
-		}
-		if (b >= 32 && b <= 126) || b == '\t' {
-			dest.WriteByte(b)
-			continue
-		}
-		fmt.Fprintf(dest, "\\x%02x", b)
-	}
 }
 
 // comment lines prefixes each line in lines with "// ".
