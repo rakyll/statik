@@ -12,7 +12,7 @@ Install the command line tool first.
 
 	go get github.com/rakyll/statik
 
-statik is a tiny program that reads a directory and generates a source file that contains its contents. The generated source file registers the directory contents to be used by statik file system.
+statik is a tiny program that reads a directory and generates a source file contains its contents. The generated source file registers the directory contents to be used by statik file system.
 
 The command below will walk on the public path and generate a package called `statik` under the current working directory.
 
