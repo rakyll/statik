@@ -71,7 +71,7 @@ func New() (http.FileSystem, error) {
 		if err != nil {
 			return nil, fmt.Errorf("statik/fs: error unzipping file %q: %s", zipFile.Name, err)
 		}
-		files["/"+zipFile.Name] = f
+		files[string(os.PathSeparator)+zipFile.Name] = f
 	}
 	for fn := range files {
 		// go up directories recursively in order to care deep directory
