@@ -54,10 +54,14 @@ func Register(data string) {
 // New creates a new file system with the registered zip contents data.
 // It unzips all files and stores them in an in-memory map.
 func New() (http.FileSystem, error) {
-	if zipData == "" {
+	return NewFromData(zipData)
+}
+
+func NewFromData(data string) (http.FileSystem, error) {
+	if data == "" {
 		return nil, errors.New("statik/fs: no zip data registered")
 	}
-	zipReader, err := zip.NewReader(strings.NewReader(zipData), int64(len(zipData)))
+	zipReader, err := zip.NewReader(strings.NewReader(data), int64(len(data)))
 	if err != nil {
 		return nil, err
 	}

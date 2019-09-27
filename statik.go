@@ -198,14 +198,16 @@ package %s
 
 import (
 	"github.com/rakyll/statik/fs"
+	"net/http"
 )
 
-func init() {
-	data := "`, tags, comment, namePackage)
+func New() (http.FileSystem, error) {
+	return fs.NewFromData(statikData)
+}
+
+var statikData = "`, tags, comment, namePackage)
 	FprintZipData(&qb, buffer.Bytes())
 	fmt.Fprint(&qb, `"
-	fs.Register(data)
-}
 `)
 
 	if err = ioutil.WriteFile(f.Name(), qb.Bytes(), 0644); err != nil {
