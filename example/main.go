@@ -1,4 +1,4 @@
-//go:generate statik -src=./public
+//go:generate go run ./statik/gen/gen.go -src=./public
 
 package main
 
