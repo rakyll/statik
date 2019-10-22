@@ -50,10 +50,10 @@ func Register(data string) {
 	RegisterWithName("default", data)
 }
 
-// RegisterWithName registers zip contents data and set asset name,
+// RegisterWithName registers zip contents data and set asset namespace,
 // later used to initialize the statik file system.
-func RegisterWithName(assetName string, data string) {
-	zipData[assetName] = data
+func RegisterWithName(assetNamespace string, data string) {
+	zipData[assetNamespace] = data
 }
 
 // New creates a new file system with the default registered zip contents data.
@@ -64,8 +64,8 @@ func New() (http.FileSystem, error) {
 
 // NewWithName creates a new file system with the registered zip contents data.
 // It unzips all files and stores them in an in-memory map.
-func NewWithName(assetName string) (http.FileSystem, error) {
-	asset, ok := zipData[assetName]
+func NewWithName(assetNamespace string) (http.FileSystem, error) {
+	asset, ok := zipData[assetNamespace]
 	if !ok {
 		return nil, errors.New("statik/fs: no zip data registered")
 	}

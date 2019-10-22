@@ -193,10 +193,10 @@ func generateSource(srcPath string) (file *os.File, err error) {
 	}
 
 	// e.g.)
-	// assetNameIdentify is "AbcDeF_G"
-	// when assetName is "abc de f-g"
-	assetName := *flagAstName
-	assetNameIdentify := toSymbolSafe(assetName)
+	// assetNamespaceIdentify is "AbcDeF_G"
+	// when assetNamespace is "abc de f-g"
+	assetNamespace := *flagAstName
+	assetNamespaceIdentify := toSymbolSafe(assetNamespace)
 
 	// then embed it as a quoted string
 	var qb bytes.Buffer
@@ -209,10 +209,10 @@ import (
 )
 
 `, tags, comment, namePackage)
-	if assetName != "default" {
+	if assetNamespace != "default" {
 		fmt.Fprintf(&qb, `
-const %s = "%s" // static asset name
-`, assetNameIdentify, assetName)
+const %s = "%s" // static asset namespace
+`, assetNamespaceIdentify, assetNamespace)
 	}
 	fmt.Fprint(&qb, `
 func init() {
@@ -221,7 +221,7 @@ func init() {
 	fmt.Fprintf(&qb, `"
 	fs.RegisterWithName("%s", data)
 }
-`, assetName)
+`, assetNamespace)
 
 	if err = ioutil.WriteFile(f.Name(), qb.Bytes(), 0644); err != nil {
 		return
