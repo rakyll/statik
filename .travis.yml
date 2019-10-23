@@ -8,7 +8,7 @@ go_import_path: github.com/rakyll/statik
 
 install:
   - go build -v
-  - ./statik -f -src=./example/public -dest=./example/ -only-include=*.jpg,*.txt,*.html,*.css,*.js
+  - ./statik -f -src=./example/public -dest=./example/ -include=*.jpg,*.txt,*.html,*.css,*.js
 
 script:
   - go test -v -bench=. ./...

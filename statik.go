@@ -25,10 +25,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	spath "path"
 	"path/filepath"
 	"strings"
 	"time"
-	spath "path"
 )
 
 const (
@@ -46,7 +46,7 @@ var (
 	flagTags       = flag.String("tags", "", "Write build constraint tags")
 	flagPkg        = flag.String("p", "statik", "Name of the generated package")
 	flagPkgCmt     = flag.String("c", "Package statik contains static assets.", "The package comment. An empty value disables this comment.\n")
-	flagIncludes   = flag.String("only-include", "*.*", "The patterns of files to be included (by comma separated).\n")
+	flagIncludes   = flag.String("include", "*.*", "The patterns of files to be included (by comma separated).\n")
 )
 
 // mtimeDate holds the arbitrary mtime that we assign to files when
