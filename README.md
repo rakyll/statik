@@ -20,7 +20,7 @@ The command below will walk on the public path and generate a package called `st
 
 The command below will filter only files on listed extensions.
 
-    $ statik -exts=*.jpg,*.txt,*.html,*.css,*.js
+    $ statik -include=*.jpg,*.txt,*.html,*.css,*.js
 
 In your program, all your need to do is to import the generated package, initialize a new statik file system and serve.
 
