@@ -46,7 +46,7 @@ var (
 	flagTags       = flag.String("tags", "", "Write build constraint tags")
 	flagPkg        = flag.String("p", "statik", "Name of the generated package")
 	flagPkgCmt     = flag.String("c", "Package statik contains static assets.", "The package comment. An empty value disables this comment.\n")
-	flagIncludes   = flag.String("include", "*.*", "The patterns of files to be included (by comma separated).\n")
+	flagInclude   = flag.String("include", "*.*", "The patterns of files to be included (by comma separated).\n")
 )
 
 // mtimeDate holds the arbitrary mtime that we assign to files when
@@ -58,7 +58,7 @@ func main() {
 
 	namePackage = *flagPkg
 
-	file, err := generateSource(*flagSrc, *flagIncludes)
+	file, err := generateSource(*flagSrc, *flagInclude)
 	if err != nil {
 		exitWithError(err)
 	}
