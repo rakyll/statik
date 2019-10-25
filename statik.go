@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	spath "path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -45,6 +46,7 @@ var (
 	flagTags       = flag.String("tags", "", "Write build constraint tags")
 	flagPkg        = flag.String("p", "statik", "Name of the generated package")
 	flagPkgCmt     = flag.String("c", "Package statik contains static assets.", "The package comment. An empty value disables this comment.\n")
+	flagInclude   = flag.String("include", "*.*", "The patterns of files to be included (by comma separated).\n")
 )
 
 // mtimeDate holds the arbitrary mtime that we assign to files when
@@ -56,7 +58,7 @@ func main() {
 
 	namePackage = *flagPkg
 
-	file, err := generateSource(*flagSrc)
+	file, err := generateSource(*flagSrc, *flagInclude)
 	if err != nil {
 		exitWithError(err)
 	}
@@ -114,11 +116,40 @@ func rename(src, dest string) error {
 	return err
 }
 
+// Check if an array contains an item
+func contains(slice []string, item string) bool {
+	set := make(map[string]struct{}, len(slice))
+	for _, s := range slice {
+		set[s] = struct{}{}
+	}
+
+	_, ok := set[item]
+	return ok
+}
+
+// Match a path with some of inclusions
+func match(incs []string, path string) (bool, error) {
+	var err error
+	for _, inc := range incs {
+		matches, e := filepath.Glob(spath.Join(filepath.Dir(path), inc))
+
+		if e != nil {
+			err = e
+		}
+
+		if matches != nil && len(matches) != 0 && contains(matches, path) {
+			return true, nil
+		}
+	}
+
+	return false, err
+}
+
 // Walks on the source path and generates source code
 // that contains source directory's contents as zip contents.
 // Generates source registers generated zip contents data to
 // be read by the statik/fs HTTP file system.
-func generateSource(srcPath string) (file *os.File, err error) {
+func generateSource(srcPath string, includes string) (file *os.File, err error) {
 	var (
 		buffer    bytes.Buffer
 		zipWriter io.Writer
@@ -153,6 +184,15 @@ func generateSource(srcPath string) (file *os.File, err error) {
 		if err != nil {
 			return err
 		}
+
+		incs := strings.Split(includes, ",")
+
+		if b, e := match(incs, path); e != nil {
+			return err
+		} else if !b {
+			return nil
+		}
+
 		fHeader, err := zip.FileInfoHeader(fi)
 		if err != nil {
 			return err
