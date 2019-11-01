@@ -41,6 +41,7 @@ var (
 	flagSrc        = flag.String("src", path.Join(".", "public"), "The path of the source directory.")
 	flagDest       = flag.String("dest", ".", "The destination path of the generated package.")
 	flagNoMtime    = flag.Bool("m", false, "Ignore modification times on files.")
+	flagNoMode     = flag.Bool("P", false, "Ignore file mode/permissions.")
 	flagNoCompress = flag.Bool("Z", false, "Do not use compression to shrink the files.")
 	flagForce      = flag.Bool("f", false, "Overwrite destination file if it already exists.")
 	flagTags       = flag.String("tags", "", "Write build constraint tags")
@@ -202,6 +203,11 @@ func generateSource(srcPath string, includes string) (file *os.File, err error) 
 			// the output is deterministic with respect to the file contents.
 			// Do NOT use fHeader.Modified as it only works on go >= 1.10
 			fHeader.SetModTime(mtimeDate)
+		}
+		if *flagNoMode {
+			// Always use the same mode so that the output is deterministic with
+			// respect to file contents.
+			fHeader.SetMode(os.ModePerm)
 		}
 		fHeader.Name = filepath.ToSlash(relPath)
 		if !*flagNoCompress {
