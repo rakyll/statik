@@ -31,9 +31,7 @@ import (
 	"time"
 )
 
-const (
-	nameSourceFile = "statik.go"
-)
+const nameSourceFile = "statik.go"
 
 var namePackage string
 
@@ -46,7 +44,7 @@ var (
 	flagTags       = flag.String("tags", "", "Write build constraint tags")
 	flagPkg        = flag.String("p", "statik", "Name of the generated package")
 	flagPkgCmt     = flag.String("c", "Package statik contains static assets.", "The package comment. An empty value disables this comment.\n")
-	flagInclude   = flag.String("include", "*.*", "The patterns of files to be included (by comma separated).\n")
+	flagInclude    = flag.String("include", "*.*", "The patterns of files to be included (by comma separated).\n")
 )
 
 // mtimeDate holds the arbitrary mtime that we assign to files when
