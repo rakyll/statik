@@ -109,15 +109,6 @@ func (di dirInfo) ModTime() time.Time { return time.Time{} }
 func (di dirInfo) IsDir() bool        { return true }
 func (di dirInfo) Sys() interface{}   { return nil }
 
-func unzip(zf *zip.File) ([]byte, error) {
-	rc, err := zf.Open()
-	if err != nil {
-		return nil, err
-	}
-	defer rc.Close()
-	return ioutil.ReadAll(rc)
-}
-
 // Open returns a file matching the given file name, or os.ErrNotExists if
 // no file matching the given file name is found in the archive.
 // If a directory is requested, Open returns the file named "index.html"
@@ -214,4 +205,13 @@ func (f *httpFile) Readdir(count int) ([]os.FileInfo, error) {
 
 func (f *httpFile) Close() error {
 	return nil
+}
+
+func unzip(zf *zip.File) ([]byte, error) {
+	rc, err := zf.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+	return ioutil.ReadAll(rc)
 }
