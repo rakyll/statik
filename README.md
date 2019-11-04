@@ -43,6 +43,8 @@ import (
   http.ListenAndServe(":8080", nil)
 ~~~
 
+Visit http://localhost:8080/public/path/to/file to see your file.
+
 You can also read the content of a single file:
 
 ~~~ go
@@ -72,8 +74,6 @@ import (
 
   fmt.Println(string(contents))
 ~~~
-
-Visit http://localhost:8080/public/path/to/file to see your file.
 
 There is also a working example under [example](https://github.com/rakyll/statik/tree/master/example) directory, follow the instructions to build and run it.
 
