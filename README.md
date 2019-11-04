@@ -43,6 +43,8 @@ import (
   http.ListenAndServe(":8080", nil)
 ~~~
 
+You can also read the content of a single file:
+
 ~~~ go
 import (
   "github.com/rakyll/statik/fs"
