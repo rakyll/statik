@@ -382,23 +382,6 @@ func TestOpen_Parallel(t *testing.T) {
 	wg.Wait()
 }
 
-func BenchmarkOpen(b *testing.B) {
-	Register(mustZipTree("../testdata/index"))
-	fs, err := New()
-	if err != nil {
-		b.Fatalf("New() = %v", err)
-	}
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			name := "/index.html"
-			_, err := fs.Open(name)
-			if err != nil {
-				b.Errorf("fs.Open(%v) = %v", name, err)
-			}
-		}
-	})
-}
-
 // mustZipTree walks on the source path and returns the zipped file contents
 // as a string. Panics on any errors.
 func mustZipTree(srcPath string) string {

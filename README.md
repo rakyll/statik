@@ -31,18 +31,49 @@ import (
   _ "./statik" // TODO: Replace with the absolute import path
 )
 
-// ...
+  // ...
 
   statikFS, err := fs.New()
   if err != nil {
     log.Fatal(err)
   }
-
+  
+  // Serve the contents over HTTP.
   http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(statikFS)))
   http.ListenAndServe(":8080", nil)
 ~~~
 
 Visit http://localhost:8080/public/path/to/file to see your file.
+
+You can also read the content of a single file:
+
+~~~ go
+import (
+  "github.com/rakyll/statik/fs"
+
+  _ "./statik" // TODO: Replace with the absolute import path
+)
+
+  // ...
+
+  statikFS, err := fs.New()
+  if err != nil {
+    log.Fatal(err)
+  }
+  
+  // Access individual files by their paths.
+  r, err := statikFS.Open("/hello.txt")
+  if err != nil {
+    log.Fatal(err)
+  }    
+  defer r.Close()
+  contents, err := ioutil.ReadAll(r)
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  fmt.Println(string(contents))
+~~~
 
 There is also a working example under [example](https://github.com/rakyll/statik/tree/master/example) directory, follow the instructions to build and run it.
 
