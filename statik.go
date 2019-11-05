@@ -39,7 +39,7 @@ var (
 	flagSrc        = flag.String("src", path.Join(".", "public"), "")
 	flagDest       = flag.String("dest", ".", "")
 	flagNoMtime    = flag.Bool("m", false, "")
-  flagNoMode     = flag.Bool("P", false, "")
+	flagNoMode     = flag.Bool("P", false, "")
 	flagNoCompress = flag.Bool("Z", false, "")
 	flagForce      = flag.Bool("f", false, "")
 	flagTags       = flag.String("tags", "", "")
