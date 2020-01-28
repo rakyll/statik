@@ -222,6 +222,37 @@ func TestOpen(t *testing.T) {
 	}
 }
 
+func TestGlob(t *testing.T) {
+	Register(mustZipTree("../testdata/deep"))
+	fs, err := NewGlob("/*/*/c")
+	if err != nil {
+		t.Errorf("New() = %v", err)
+		return
+	}
+	expectedData := mustReadFile("../testdata/deep/aa/bb/c")
+	name := "/aa/bb/c"
+	f, err := fs.Open(name)
+	if err != nil {
+		t.Errorf("fs.Open(%q) = %v", name, err)
+		return
+	}
+	b, err := ioutil.ReadAll(f)
+	if err != nil {
+		t.Errorf("ioutil.ReadAll(%v) = %v", name, err)
+	}
+	if !reflect.DeepEqual(expectedData, b) {
+		t.Errorf("%v data = %q; want %q", name, b, expectedData)
+	}
+
+	_ = mustReadFile("../testdata/deep/a")
+
+	_, err = fs.Open("/a")
+	if err != os.ErrNotExist {
+		t.Errorf("fs.Open(/aa/a) don't return error")
+		return
+	}
+}
+
 func TestWalk(t *testing.T) {
 	Register(mustZipTree("../testdata/deep"))
 	fs, err := New()

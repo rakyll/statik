@@ -54,6 +54,11 @@ func Register(data string) {
 // New creates a new file system with the registered zip contents data.
 // It unzips all files and stores them in an in-memory map.
 func New() (http.FileSystem, error) {
+	return NewGlob("")
+}
+
+// NewGlob acts like fs.New(), buf filter files using glob pattern
+func NewGlob(pattern string) (http.FileSystem, error) {
 	if zipData == "" {
 		return nil, errors.New("statik/fs: no zip data registered")
 	}
@@ -71,7 +76,17 @@ func New() (http.FileSystem, error) {
 		if err != nil {
 			return nil, fmt.Errorf("statik/fs: error unzipping file %q: %s", zipFile.Name, err)
 		}
-		files["/"+zipFile.Name] = f
+		fname := "/" + zipFile.Name
+		matched := true
+		if pattern != "" {
+			if matched, err = filepath.Match(pattern, fname); err != nil {
+				return nil, fmt.Errorf("statik/fs: error matching file name with pattern: %s", err)
+			}
+		}
+
+		if matched {
+			files[fname] = f
+		}
 	}
 	for fn := range files {
 		// go up directories recursively in order to care deep directory
