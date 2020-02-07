@@ -48,24 +48,24 @@ type statikFS struct {
 // Register registers zip contents data, later used to initialize
 // the statik file system.
 func Register(data string) {
-	RegisterWithName("default", data)
+	RegisterWithNamespace("default", data)
 }
 
-// RegisterWithName registers zip contents data and set asset namespace,
+// RegisterWithNamespace registers zip contents data and set asset namespace,
 // later used to initialize the statik file system.
-func RegisterWithName(assetNamespace string, data string) {
+func RegisterWithNamespace(assetNamespace string, data string) {
 	zipData[assetNamespace] = data
 }
 
 // New creates a new file system with the default registered zip contents data.
 // It unzips all files and stores them in an in-memory map.
 func New() (http.FileSystem, error) {
-	return NewWithName("default")
+	return NewWithNamespace("default")
 }
 
-// NewWithName creates a new file system with the registered zip contents data.
+// NewWithNamespace creates a new file system with the registered zip contents data.
 // It unzips all files and stores them in an in-memory map.
-func NewWithName(assetNamespace string) (http.FileSystem, error) {
+func NewWithNamespace(assetNamespace string) (http.FileSystem, error) {
 	asset, ok := zipData[assetNamespace]
 	if !ok {
 		return nil, errors.New("statik/fs: no zip data registered")
