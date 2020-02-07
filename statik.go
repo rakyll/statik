@@ -25,40 +25,72 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	spath "path"
 	"path/filepath"
 	"strings"
 	"time"
 	"unicode"
 )
 
-const (
-	nameSourceFile = "statik.go"
-)
+const nameSourceFile = "statik.go"
 
 var namePackage string
 
 var (
-	flagSrc        = flag.String("src", path.Join(".", "public"), "The path of the source directory.")
-	flagDest       = flag.String("dest", ".", "The destination path of the generated package.")
-	flagNoMtime    = flag.Bool("m", false, "Ignore modification times on files.")
-	flagNoCompress = flag.Bool("Z", false, "Do not use compression to shrink the files.")
-	flagForce      = flag.Bool("f", false, "Overwrite destination file if it already exists.")
-	flagTags       = flag.String("tags", "", "Write build constraint tags")
-	flagPkg        = flag.String("p", "statik", "Name of the generated package")
-	flagAstName    = flag.String("a", "default", "Set static assets name")
-	flagPkgCmt     = flag.String("c", "Package statik contains static assets.", "The package comment. An empty value disables this comment.\n")
+	flagSrc        = flag.String("src", path.Join(".", "public"), "")
+	flagDest       = flag.String("dest", ".", "")
+	flagNoMtime    = flag.Bool("m", false, "")
+	flagNoCompress = flag.Bool("Z", false, "")
+	flagForce      = flag.Bool("f", false, "")
+	flagTags       = flag.String("tags", "", "")
+	flagPkg        = flag.String("p", "statik", "")
+	flagAstName    = flag.String("a", "default", "")
+  flagPkgCmt     = flag.String("c", "", "")
+	flagInclude    = flag.String("include", "*.*", "")
 )
+
+const helpText = `statik [options]
+
+Options:
+-src     The source directory of the assets. "public" by default.
+-dest    The destination directory of the generated package. "." by default.
+
+-a       Support different asset namespaces
+-f       Override destination if it already exists, false by default.
+-include Wildcard to filter files to include, "*.*" by default.
+-m       Ignore modification times on files, false by default.
+-Z       Do not use compression, false by default.
+
+-p       Name of the generated package, "statik" by default.
+-tags    Build tags for the generated package.
+-c       Godoc for the generated package.
+
+-help    Prints this text.
+
+Examples:
+
+Generates a statik package from ./assets directory. Overrides
+if there is already an existing package.
+
+   $ statik -src=assets -f
+
+Generates a statik package only with the ".js" files
+from the ./public directory.
+
+   $ statik -include=*.js
+`
 
 // mtimeDate holds the arbitrary mtime that we assign to files when
 // flagNoMtime is set.
 var mtimeDate = time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
 
 func main() {
+	flag.Usage = help
 	flag.Parse()
 
 	namePackage = *flagPkg
 
-	file, err := generateSource(*flagSrc)
+	file, err := generateSource(*flagSrc, *flagInclude)
 	if err != nil {
 		exitWithError(err)
 	}
@@ -116,11 +148,40 @@ func rename(src, dest string) error {
 	return err
 }
 
+// Check if an array contains an item
+func contains(slice []string, item string) bool {
+	set := make(map[string]struct{}, len(slice))
+	for _, s := range slice {
+		set[s] = struct{}{}
+	}
+
+	_, ok := set[item]
+	return ok
+}
+
+// Match a path with some of inclusions
+func match(incs []string, path string) (bool, error) {
+	var err error
+	for _, inc := range incs {
+		matches, e := filepath.Glob(spath.Join(filepath.Dir(path), inc))
+
+		if e != nil {
+			err = e
+		}
+
+		if matches != nil && len(matches) != 0 && contains(matches, path) {
+			return true, nil
+		}
+	}
+
+	return false, err
+}
+
 // Walks on the source path and generates source code
 // that contains source directory's contents as zip contents.
 // Generates source registers generated zip contents data to
 // be read by the statik/fs HTTP file system.
-func generateSource(srcPath string) (file *os.File, err error) {
+func generateSource(srcPath string, includes string) (file *os.File, err error) {
 	var (
 		buffer    bytes.Buffer
 		zipWriter io.Writer
@@ -155,6 +216,15 @@ func generateSource(srcPath string) (file *os.File, err error) {
 		if err != nil {
 			return err
 		}
+
+		incs := strings.Split(includes, ",")
+
+		if b, e := match(incs, path); e != nil {
+			return err
+		} else if !b {
+			return nil
+		}
+
 		fHeader, err := zip.FileInfoHeader(fi)
 		if err != nil {
 			return err
@@ -290,4 +360,9 @@ func toSymbolSafe(str string) string {
 		}
 	}
 	return strings.TrimSpace(strings.Map(replace, str))
+}
+
+func help() {
+	fmt.Println(helpText)
+	os.Exit(1)
 }

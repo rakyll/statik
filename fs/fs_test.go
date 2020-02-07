@@ -222,6 +222,20 @@ func TestOpen(t *testing.T) {
 				},
 			},
 		},
+		{
+			description: "Paths containing dots should be properly sanitized",
+			zipData:     mustZipTree("../testdata"),
+			wantFiles: map[string]wantFile{
+				"/../file/../file/../file/.//file.txt": {
+					data:    mustReadFile("../testdata/file/file.txt"),
+					isDir:   false,
+					modTime: fileTxtHeader.ModTime(),
+					mode:    fileTxtHeader.Mode(),
+					name:    fileTxtHeader.Name,
+					size:    int64(fileTxtHeader.UncompressedSize64),
+				},
+			},
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
@@ -431,23 +445,6 @@ func TestOpen_Parallel(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-}
-
-func BenchmarkOpen(b *testing.B) {
-	Register(mustZipTree("../testdata/index"))
-	fs, err := New()
-	if err != nil {
-		b.Fatalf("New() = %v", err)
-	}
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			name := "/index.html"
-			_, err := fs.Open(name)
-			if err != nil {
-				b.Errorf("fs.Open(%v) = %v", name, err)
-			}
-		}
-	})
 }
 
 // mustZipTree walks on the source path and returns the zipped file contents
