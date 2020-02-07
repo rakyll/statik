@@ -40,7 +40,7 @@ type wantFile struct {
 	err     error
 }
 
-func TestRegisterWithName(t *testing.T) {
+func TestRegisterWithNamespace(t *testing.T) {
 	tests := []struct {
 		description string
 		assetName   string
@@ -48,7 +48,7 @@ func TestRegisterWithName(t *testing.T) {
 		condition   func() error
 	}{
 		{
-			description: "RegisterWithName() should set zipData with assetName to be key",
+			description: "RegisterWithNamespace() should set zipData with assetName to be key",
 			assetName:   "file",
 			zipData:     "file test",
 			condition: func() error {
@@ -78,11 +78,11 @@ func TestRegisterWithName(t *testing.T) {
 			},
 		},
 		{
-			description: "zipData[\"foo\"] should be able to open by OpenWithName(\"foo\")",
+			description: "zipData[\"foo\"] should be able to open by Open()",
 			assetName:   "foo",
 			zipData:     mustZipTree("../testdata/file"),
 			condition: func() error {
-				fs, err := NewWithName("foo")
+				fs, err := NewWithNamespace("foo")
 				if err != nil {
 					return err
 				}
@@ -95,7 +95,7 @@ func TestRegisterWithName(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
-			RegisterWithName(tc.assetName, tc.zipData)
+			RegisterWithNamespace(tc.assetName, tc.zipData)
 			if err := tc.condition(); err != nil {
 				t.Error(err)
 			}

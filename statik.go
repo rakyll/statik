@@ -44,18 +44,18 @@ var (
 	flagForce      = flag.Bool("f", false, "")
 	flagTags       = flag.String("tags", "", "")
 	flagPkg        = flag.String("p", "statik", "")
-	flagAstName    = flag.String("a", "default", "")
-  flagPkgCmt     = flag.String("c", "", "")
+	flagNamespace  = flag.String("ns", "default", "")
+	flagPkgCmt     = flag.String("c", "", "")
 	flagInclude    = flag.String("include", "*.*", "")
 )
 
 const helpText = `statik [options]
 
 Options:
--src     The source directory of the assets. "public" by default.
--dest    The destination directory of the generated package. "." by default.
+-src     The source directory of the assets, "public" by default.
+-dest    The destination directory of the generated package, "." by default.
 
--a       Support different asset namespaces
+-ns      The namespace where assets will exist, "default" by default.
 -f       Override destination if it already exists, false by default.
 -include Wildcard to filter files to include, "*.*" by default.
 -m       Ignore modification times on files, false by default.
@@ -265,7 +265,7 @@ func generateSource(srcPath string, includes string) (file *os.File, err error) 
 	// e.g.)
 	// assetNamespaceIdentify is "AbcDeF_G"
 	// when assetNamespace is "abc de f-g"
-	assetNamespace := *flagAstName
+	assetNamespace := *flagNamespace
 	assetNamespaceIdentify := toSymbolSafe(assetNamespace)
 
 	// then embed it as a quoted string
@@ -289,7 +289,7 @@ func init() {
 	data := "`)
 	FprintZipData(&qb, buffer.Bytes())
 	fmt.Fprintf(&qb, `"
-	fs.RegisterWithName("%s", data)
+	fs.RegisterWithNamespace("%s", data)
 }
 `, assetNamespace)
 
