@@ -45,10 +45,18 @@ type statikFS struct {
 	dirs  map[string][]string
 }
 
+const defaultNamespace = "default"
+
+// IsDefaultNamespace returns true if the assetNamespace is
+// the default one
+func IsDefaultNamespace(assetNamespace string) bool {
+	return assetNamespace == defaultNamespace
+}
+
 // Register registers zip contents data, later used to initialize
 // the statik file system.
 func Register(data string) {
-	RegisterWithNamespace("default", data)
+	RegisterWithNamespace(defaultNamespace, data)
 }
 
 // RegisterWithNamespace registers zip contents data and set asset namespace,
@@ -60,7 +68,7 @@ func RegisterWithNamespace(assetNamespace string, data string) {
 // New creates a new file system with the default registered zip contents data.
 // It unzips all files and stores them in an in-memory map.
 func New() (http.FileSystem, error) {
-	return NewWithNamespace("default")
+	return NewWithNamespace(defaultNamespace)
 }
 
 // NewWithNamespace creates a new file system with the registered zip contents data.

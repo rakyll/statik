@@ -30,6 +30,8 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/rakyll/statik/fs"
 )
 
 const nameSourceFile = "statik.go"
@@ -279,7 +281,7 @@ import (
 )
 
 `, tags, comment, namePackage)
-	if assetNamespace != "default" {
+	if !fs.IsDefaultNamespace(assetNamespace) {
 		fmt.Fprintf(&qb, `
 const %s = "%s" // static asset namespace
 `, assetNamespaceIdentify, assetNamespace)
@@ -288,10 +290,18 @@ const %s = "%s" // static asset namespace
 func init() {
 	data := "`)
 	FprintZipData(&qb, buffer.Bytes())
-	fmt.Fprintf(&qb, `"
-	fs.RegisterWithNamespace("%s", data)
-}
-`, assetNamespace)
+	if fs.IsDefaultNamespace(assetNamespace) {
+		fmt.Fprint(&qb, `"
+		fs.Register(data)
+	}
+	`)
+
+	} else {
+		fmt.Fprintf(&qb, `"
+		fs.RegisterWithNamespace("%s", data)
+	}
+	`, assetNamespace)
+	}
 
 	if err = ioutil.WriteFile(f.Name(), qb.Bytes(), 0644); err != nil {
 		return
