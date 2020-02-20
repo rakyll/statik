@@ -288,10 +288,18 @@ const %s = "%s" // static asset namespace
 func init() {
 	data := "`)
 	FprintZipData(&qb, buffer.Bytes())
-	fmt.Fprintf(&qb, `"
-	fs.RegisterWithNamespace("%s", data)
-}
-`, assetNamespace)
+	if assetNamespace == "default" {
+		fmt.Fprint(&qb, `"
+		fs.Register(data)
+	}
+	`)
+
+	} else {
+		fmt.Fprintf(&qb, `"
+		fs.RegisterWithNamespace("%s", data)
+	}
+	`, assetNamespace)
+	}
 
 	if err = ioutil.WriteFile(f.Name(), qb.Bytes(), 0644); err != nil {
 		return
