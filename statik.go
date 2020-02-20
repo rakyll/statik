@@ -42,6 +42,7 @@ var (
 	flagSrc        = flag.String("src", path.Join(".", "public"), "")
 	flagDest       = flag.String("dest", ".", "")
 	flagNoMtime    = flag.Bool("m", false, "")
+	flagNoMode     = flag.Bool("P", false, "")
 	flagNoCompress = flag.Bool("Z", false, "")
 	flagForce      = flag.Bool("f", false, "")
 	flagTags       = flag.String("tags", "", "")
@@ -61,6 +62,7 @@ Options:
 -f       Override destination if it already exists, false by default.
 -include Wildcard to filter files to include, "*.*" by default.
 -m       Ignore modification times on files, false by default.
+-P       Ignore file mode/permissions, false by default.
 -Z       Do not use compression, false by default.
 
 -p       Name of the generated package, "statik" by default.
@@ -236,6 +238,11 @@ func generateSource(srcPath string, includes string) (file *os.File, err error) 
 			// the output is deterministic with respect to the file contents.
 			// Do NOT use fHeader.Modified as it only works on go >= 1.10
 			fHeader.SetModTime(mtimeDate)
+		}
+		if *flagNoMode {
+			// Always use the same mode so that the output is deterministic with
+			// respect to file contents.
+			fHeader.SetMode(os.ModePerm)
 		}
 		fHeader.Name = filepath.ToSlash(relPath)
 		if !*flagNoCompress {
