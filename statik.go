@@ -60,7 +60,7 @@ Options:
 -ns      The namespace where assets will exist, "default" by default.
 -f       Override destination if it already exists, false by default.
 -include Wildcard to filter files to include, "*.*" by default.
--m       Ignore modification times on files, false by default.
+-m       Ignore modification times for deterministic output, false by default.
 -Z       Do not use compression, false by default.
 
 -p       Name of the generated package, "statik" by default.
