@@ -78,3 +78,20 @@ import (
 There is also a working example under [example](https://github.com/rakyll/statik/tree/master/example) directory, follow the instructions to build and run it.
 
 Note: The idea and the implementation are hijacked from [camlistore](http://camlistore.org/). I decided to decouple it from its codebase due to the fact I'm actively in need of a similar solution for many of my projects.
+
+## Deterministic output
+
+By default, statik includes the "last modified" (mtime) time on files that it packs. This allows an HTTP FileServer to present the correct file modification times to clients.
+
+However, if you have a continuous integration task that checks that your checked-in static files in a git repository match the code that is generated on your CI system, you'll run into a problem: The mtime on the git checkout does not match what you have locally, causing tests to fail.
+
+You can fix the test in one of two ways:
+
+1. In CI, manually set the mtime on the freshly checked out tree: [here's a stackoverflow answer](https://stackoverflow.com/a/22638823/93405) that provides a shell command to do that; or,
+2. Instruct statik not to store the "last modified" time.
+
+To ignore the last modified time, use the `-m` to statik, like so:
+
+    $ statik -m -include=*.jpg,*.txt,*.html,*.css,*.js
+
+Note that this will cause http.FileServer to consider the file to always have changed & serve it with a "Last-Modified" of the time of the request.
