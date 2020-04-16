@@ -319,6 +319,24 @@ func TestWalk(t *testing.T) {
 	}
 }
 
+func TestChdir(t *testing.T) {
+	Register(mustZipTree("../testdata"))
+	fs, err := New()
+	if err != nil {
+		t.Errorf("New() = %v", err)
+		return
+	}
+	fs, err = Chdir(fs, "/file")
+	if err != nil {
+		t.Errorf("Chdir(fs, /file) = %v", err)
+		return
+	}
+	if _, err := fs.Open("/file.txt"); err != nil {
+		t.Errorf("fs.Open(/file.txt) = %v", err)
+		return
+	}
+}
+
 func TestHTTPFile_Readdir(t *testing.T) {
 	Register(mustZipTree("../testdata/readdir"))
 	fs, err := New()
