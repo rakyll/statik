@@ -49,6 +49,7 @@ var (
 	flagNamespace  = flag.String("ns", "default", "")
 	flagPkgCmt     = flag.String("c", "", "")
 	flagInclude    = flag.String("include", "*.*", "")
+	flagAllFiles   = flag.Bool("a", false, "")
 )
 
 const helpText = `statik [options]
@@ -59,6 +60,7 @@ Options:
 
 -ns      The namespace where assets will exist, "default" by default.
 -f       Override destination if it already exists, false by default.
+-a       Include hidden files, false by default.
 -include Wildcard to filter files to include, "*.*" by default.
 -m       Ignore modification times for deterministic output, false by default.
 -Z       Do not use compression, false by default.
@@ -207,7 +209,7 @@ func generateSource(srcPath string, includes string) (file *os.File, err error) 
 		// No entry is needed for directories in a zip file.
 		// Each file is represented with a path, no directory
 		// entities are required to build the hierarchy.
-		if fi.IsDir() || strings.HasPrefix(fi.Name(), ".") {
+		if fi.IsDir() || (!*flagAllFiles && strings.HasPrefix(fi.Name(), ".")) {
 			return nil
 		}
 		relPath, err := filepath.Rel(srcPath, path)
