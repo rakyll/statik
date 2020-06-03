@@ -48,7 +48,7 @@ var (
 	flagPkg        = flag.String("p", "statik", "")
 	flagNamespace  = flag.String("ns", "default", "")
 	flagPkgCmt     = flag.String("c", "", "")
-	flagInclude    = flag.String("include", "*.*", "")
+	flagInclude    = flag.String("include", "?*.*", "")
 )
 
 const helpText = `statik [options]
@@ -207,7 +207,8 @@ func generateSource(srcPath string, includes string) (file *os.File, err error) 
 		// No entry is needed for directories in a zip file.
 		// Each file is represented with a path, no directory
 		// entities are required to build the hierarchy.
-		if fi.IsDir() || strings.HasPrefix(fi.Name(), ".") {
+		// if fi.IsDir() || strings.HasPrefix(fi.Name(), ".") {
+		if fi.IsDir() {
 			return nil
 		}
 		relPath, err := filepath.Rel(srcPath, path)
