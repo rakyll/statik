@@ -6,6 +6,12 @@ statik allows you to embed a directory of static files into your Go binary to be
 
 Is this a crazy idea? No, not necessarily. If you're building a tool that has a Web component, you typically want to serve some images, CSS and JavaScript. You like the comfort of distributing a single binary, so you don't want to mess with deploying them elsewhere. If your static files are not large in size and will be browsed by a few people, statik is a solution you are looking for.
 
+## Go native embedding
+Go 1.16 added the [`//go:embed`](https://pkg.go.dev/embed) directive which provides the same functionality
+as statik, but with the advantage that it does not require the a pre-compilation
+step, or the comitting of possibly large machine generated go files into the repo.
+So you may want to use native embedding instead of statik.
+
 ## Usage
 
 Install the command line tool first.
