@@ -10,7 +10,7 @@ Is this a crazy idea? No, not necessarily. If you're building a tool that has a 
 
 Install the command line tool first.
 
-	go get github.com/rakyll/statik
+	go install github.com/rakyll/statik@latest
 
 statik is a tiny program that reads a directory and generates a source file that contains its contents. The generated source file registers the directory contents to be used by statik file system.
 
