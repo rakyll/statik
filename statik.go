@@ -24,7 +24,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
 	spath "path"
 	"path/filepath"
 	"strings"
@@ -39,7 +38,7 @@ const nameSourceFile = "statik.go"
 var namePackage string
 
 var (
-	flagSrc        = flag.String("src", path.Join(".", "public"), "")
+	flagSrc        = flag.String("src", spath.Join(".", "public"), "")
 	flagDest       = flag.String("dest", ".", "")
 	flagNoMtime    = flag.Bool("m", false, "")
 	flagNoCompress = flag.Bool("Z", false, "")
@@ -97,13 +96,13 @@ func main() {
 		exitWithError(err)
 	}
 
-	destDir := path.Join(*flagDest, namePackage)
+	destDir := spath.Join(*flagDest, namePackage)
 	err = os.MkdirAll(destDir, 0755)
 	if err != nil {
 		exitWithError(err)
 	}
 
-	err = rename(file.Name(), path.Join(destDir, nameSourceFile))
+	err = rename(file.Name(), spath.Join(destDir, nameSourceFile))
 	if err != nil {
 		exitWithError(err)
 	}
