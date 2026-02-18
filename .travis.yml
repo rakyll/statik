@@ -14,3 +14,5 @@ install:
 
 script:
   - go test -v -bench=. ./...
+  - test -z $(gofmt -l ./example/statik/statik.go | tee /dev/stderr) || (echo 'Code not formatted correctly according to gofmt!' && exit 1)
+
